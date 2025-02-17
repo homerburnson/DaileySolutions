@@ -7,20 +7,19 @@ const configuration = new Configuration({
 });
 const openai = new OpenAIApi(configuration);
 
-router.post('/generate', async (req, res) => {
-    const userInput = req.body.input;
+router.post('/openai', async (req, res) => {
+    const { input } = req.body;
 
     try {
         const response = await openai.createCompletion({
             model: 'text-davinci-003',
-            prompt: userInput,
+            prompt: input,
             max_tokens: 150,
         });
-
-        res.json({ output: response.data.choices[0].text.trim() });
+        res.json({ response: response.data.choices[0].text });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'An error occurred while generating the response.' });
+        console.error('Error with OpenAI API:', error);
+        res.status(500).json({ error: 'Error with OpenAI API' });
     }
 });
 

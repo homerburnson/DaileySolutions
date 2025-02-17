@@ -1,5 +1,5 @@
 {
-  "name": "node-openai-app",
+  "name": "openai-app",
   "version": "1.0.0",
   "description": "A Node.js application that interacts with OpenAI's API to generate responses based on user input.",
   "main": "server.js",
@@ -12,5 +12,6 @@
     "react": "^19.0.0"
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {}
 }

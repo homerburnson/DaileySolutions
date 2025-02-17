@@ -5,9 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Node OpenAI App</title>
     <link rel="stylesheet" href="styles/App.css">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
 </head>
 <body>
-    <div id="root"></div>
-    <script src="../src/App.js"></script>
+    <h1>Luke Dailey</h1>
+    <h1>OpenAI Query Interface</h1>
+    <form id="inputForm">
+        <input type="text" id="userInput" placeholder="Enter your query" required>
+        <button type="submit">Submit</button>
+    </form>
+    <div id="responseContainer" class="response" style="display: none;">
+        <h2>Response from OpenAI:</h2>
+        <p id="responseText"></p>
+    </div>
+    <script src="App.js"></script>
 </body>
 </html>
