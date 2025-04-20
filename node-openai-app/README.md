@@ -16,11 +16,9 @@ node-openai-app
 |       └── package.json
 |   ├── frontend
 |       ├── public
-|           └── index.html
-|       ├── src
+|           |── index.html
 |           ├── App.js
-|           ├── components
-|               └── InputForm.js
+|           |── InputForm.js
 |           └── styles
 |               └── App.css
 |       └── package.json

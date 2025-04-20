@@ -1,25 +1,44 @@
+const OpenAI = require('openai');
 const express = require('express');
 const router = express.Router();
-const { Configuration, OpenAIApi } = require('openai');
 
-const configuration = new Configuration({
+const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
 });
-const openai = new OpenAIApi(configuration);
+
+const model = process.env.OPEN_AI_MODEL || 'gpt-3.5-turbo'; // Default to gpt-3.5-turbo if not set
 
 router.post('/openai', async (req, res) => {
     const { input } = req.body;
-
     try {
-        const response = await openai.createCompletion({
-            model: 'text-davinci-003',
-            prompt: input,
-            max_tokens: 150,
+        const response = await openai.chat.completions.create({
+            model: model,
+            messages: [
+                {
+                  role: "user",
+                  content: input
+                }
+            ]
         });
-        res.json({ response: response.data.choices[0].text });
-    } catch (error) {
-        console.error('Error with OpenAI API:', error);
-        res.status(500).json({ error: 'Error with OpenAI API' });
+        // Extract the content from the OpenAI response
+        const messageContent = response.choices[0].message.content;
+
+        // Log the response for debugging
+        console.log('OpenAI Response:', messageContent);
+
+        // Send the extracted content back to the client
+        res.json({ response: messageContent });
+        } catch (error) {
+        if (error instanceof OpenAI.APIError) {
+        console.error(error.status);  // e.g. 401
+        console.error(error.message); // e.g. The authentication token you passed was invalid...
+        console.error(error.code);  // e.g. 'invalid_api_key'
+        console.error(error.type);  // e.g. 'invalid_request_error'
+        console.log(req.body);  // e.g. 'invalid_request_error
+        } else {
+        // Non-API error
+        console.log(error);
+        }
     }
 });
 
