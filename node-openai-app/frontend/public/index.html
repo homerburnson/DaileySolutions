@@ -3,21 +3,158 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Node OpenAI App</title>
+    <title>Dailey Solutions</title>
     <link rel="stylesheet" href="styles/App.css">
-    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <style>
+        /* General styles */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-image: url('images/background.png');
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        h1 {
+            text-align: center;
+            margin-top: 20px;
+            color: white;
+        }
+
+        nav {
+            position: absolute; /* Position the navigation bar */
+            top: 20px; /* Distance from the top */
+            left: 20px; /* Distance from the left */
+        }
+
+        nav a {
+            text-decoration: none;
+            color: #fff;
+            background-color: #007bff;
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin-right: 10px;
+            font-size: 14px;
+        }
+
+        nav a:hover {
+            background-color: #0056b3;
+        }
+
+        /* Download CV button */
+        #cvForm {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+
+        #cvLink {
+            background-color: #007bff;
+            color: #f7eacf;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        #cvLink:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* Chat container */
+        #chatContainer {
+            max-width: 80%;
+            margin: 0 auto;
+            background: #f7eacf;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+
+        .message {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 10px;
+            max-width: max-content;
+            word-wrap: break-word;
+        }
+
+        .user-message {
+            background-color: #007bff;
+            color: #f7eacf;
+            align-self: flex-start;
+            text-align: left;
+            margin-left: 0;
+        }
+
+        .response-message {
+            background-color: #f1f1f1;
+            color: #333;
+            align-self: flex-end;
+            text-align: right;
+            margin-left: auto;
+        }
+
+        #inputForm {
+            display: flex;
+            margin-top: 20px;
+        }
+
+        #userInput {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        #inputForm button {
+            background-color: #007bff;
+            color: #f7eacf;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+
+        #inputForm button:hover {
+            background-color: #0056b3;
+        }
+    </style>
 </head>
 <body>
-    <h1>Luke Dailey</h1>
-    <h1>OpenAI Query Interface</h1>
-    <form id="inputForm">
-        <input type="text" id="userInput" placeholder="Enter your query" required>
-        <button type="submit">Submit</button>
+    <nav>
+        <a href="/login">Log In</a>
+        <a href="/logout">Log Out</a>
+    </nav>
+    <h1>Talking to Luke Dailey</h1>
+
+    <!-- Button to download Luke's CV -->
+    <form id="cvForm" action="#" method="get">
+        <button id="cvLink" type="submit">Loading CV...</button>
     </form>
-    <div id="responseContainer" class="response" style="display: none;">
-        <h2>Response from OpenAI:</h2>
-        <p id="responseText"></p>
+
+    <!-- Chat container -->
+    <div id="chatContainer">
+        <div id="responseContainer" class="response">
+            <!-- Messages will be dynamically added here -->
+        </div>
+        <form id="inputForm">
+            <input type="text" id="userInput" placeholder="Enter your query" required>
+            <button type="submit">Submit</button>
+        </form>
     </div>
+
     <script src="App.js"></script>
 </body>
 </html>

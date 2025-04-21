@@ -7,11 +7,13 @@
     "start": "node server.js"
   },
   "dependencies": {
+    "dotenv": "^16.5.0",
     "express": "^4.17.1",
+    "express-openid-connect": "^2.18.0",
+    "multer": "^1.4.5-lts.2",
     "openai": "^4.0.0",
     "react": "^19.0.0"
   },
   "author": "",
-  "license": "ISC",
-  "devDependencies": {}
+  "license": "ISC"
 }

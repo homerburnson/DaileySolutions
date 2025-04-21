@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Documents</title>
+    <link rel="stylesheet" href="styles/App.css">
+</head>
+<body>
+    <h1>Upload Documents</h1>
+    <nav>
+        <a href="/">Home</a> | <a href="/login">Log In</a> | <a href="/logout">Log Out</a>
+    </nav>
+
+    <h2>Upload a File</h2>
+    <form id="uploadForm" method="POST" enctype="multipart/form-data" action="/upload">
+        <label for="folder">Select Folder:</label>
+        <select name="folder" id="folder" required>
+            <option value="covers">Covers</option>
+            <option value="cv">CV</option>
+            <option value="jobs">Jobs</option>
+        </select>
+        <br><br>
+        <label for="file">Select File:</label>
+        <input type="file" name="file" id="file" accept=".txt" required>
+        <br><br>
+        <button type="submit">Upload</button>
+    </form>
+
+    <h2>Manage Files</h2>
+    <label for="folderView">Select Folder:</label>
+    <select id="folderView" required>
+        <option value="covers">Covers</option>
+        <option value="cv">CV</option>
+        <option value="jobs">Jobs</option>
+    </select>
+    <button id="loadFiles">Load Files</button>
+
+    <div id="fileList"></div>
+
+    <script>
+        const uploadForm = document.getElementById('uploadForm');
+        const folderView = document.getElementById('folderView');
+        const loadFilesButton = document.getElementById('loadFiles');
+        const fileList = document.getElementById('fileList');
+
+        // Handle file upload
+        uploadForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const formData = new FormData(uploadForm);
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData,
+                });
+                const result = await response.json();
+                alert(result.message);
+            } catch (error) {
+                console.error('Error uploading file:', error);
+                alert('Failed to upload file.');
+            }
+        });
+
+        // Load files from the selected folder
+        loadFilesButton.addEventListener('click', async () => {
+            const folder = folderView.value;
+
+            try {
+                const response = await fetch(`upload/files?folder=${folder}`);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch files');
+                }
+                const files = await response.json();
+
+                fileList.innerHTML = '';
+                files.forEach((file) => {
+                    const fileDiv = document.createElement('div');
+                    fileDiv.innerHTML = `
+                        <h3>${file.name}</h3>
+                        <textarea rows="5" cols="50" id ="${file.name}">${file.content}</textarea>
+                        <br>
+                        <button onclick="updateFile('${folder}', '${file.name}', this)">Save</button>
+                        <button onclick="deleteFile('${folder}', '${file.name}', this)">Delete</button>
+                        <hr>
+                    `;
+                    fileList.appendChild(fileDiv);
+                });
+            } catch (error) {
+                console.error('Error loading files:', error);
+                alert('Failed to load files.');
+            }
+        });
+
+        // Update file content
+        async function updateFile(folder, fileName, button) {
+            const content = document.getElementById(fileName).value.trim();
+
+            try {
+                const response = await fetch('upload/files', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ folder, fileName, content }),
+                });
+                const result = await response.json();
+                alert(result.message);
+            } catch (error) {
+                console.error('Error updating file:', error);
+                alert('Failed to update file.');
+            }
+        }
+
+        // Delete file
+        async function deleteFile(folder, fileName, button) {
+            try {
+                const response = await fetch(`upload/files?folder=${folder}&fileName=${fileName}`, {
+                    method: 'DELETE',
+                });
+                const result = await response.json();
+                alert(result.message);
+                button.parentElement.remove();
+            } catch (error) {
+                console.error('Error deleting file:', error);
+                alert('Failed to delete file.');
+            }
+        }
+    </script>
+</body>
+</html>
