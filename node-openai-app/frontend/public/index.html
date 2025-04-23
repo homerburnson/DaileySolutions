@@ -77,30 +77,38 @@
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             padding: 20px;
+            display: flex;
+            flex-direction: column; /* Stack messages vertically */
+            gap: 10px; /* Add spacing between messages */
         }
 
-        .message {
-            margin: 10px 0;
-            padding: 10px;
-            border-radius: 10px;
-            max-width: max-content;
-            word-wrap: break-word;
-        }
-
-        .user-message {
-            background-color: #007bff;
-            color: #f7eacf;
-            align-self: flex-start;
-            text-align: left;
-            margin-left: 0;
+        /* Response container */
+        #responseContainer {
+            display: flex;
+            flex-direction: column; /* Stack messages vertically */
+            gap: 10px; /* Add spacing between messages */
         }
 
         .response-message {
             background-color: #f1f1f1;
             color: #333;
-            align-self: flex-end;
+            padding: 10px;
+            border-radius: 10px;
+            max-width: 60%; /* Limit message width */
+            word-wrap: break-word; /* Ensure long words wrap */
+            align-self: flex-start; /* Align to the left */
+            text-align: left;
+        }
+
+        .user-message {
+            background-color: #007bff;
+            color: #f7eacf;
+            padding: 10px;
+            border-radius: 10px;
+            max-width: 60%; /* Limit message width */
+            word-wrap: break-word; /* Ensure long words wrap */
+            align-self: flex-end; /* Align to the right */
             text-align: right;
-            margin-left: auto;
         }
 
         #inputForm {
@@ -156,5 +164,25 @@
     </div>
 
     <script src="App.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const responseContainer = document.getElementById('responseContainer');
+
+            // Initial prompt
+            const initialPrompt = `Hi there! 👋 I'm Luke.
+                                    Feel free to ask me anything about my background, experience, or what I'm looking for next.
+                                    You can explore my CV, cover letter, or a specific role you're hiring for—just drop a message!
+
+                                    Looking forward to chatting with you 😊`;
+
+            // Create a response message element
+            const initialMessageDiv = document.createElement('div');
+            initialMessageDiv.className = 'message response-message';
+            initialMessageDiv.textContent = initialPrompt;
+
+            // Add the initial message to the response container
+            responseContainer.appendChild(initialMessageDiv);
+        });
+    </script>
 </body>
 </html>
