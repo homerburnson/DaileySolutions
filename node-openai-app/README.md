@@ -119,6 +119,26 @@ The modular design supports these enhancements with minimal changes, encouraging
 
 ---
 
+## Feature Backlog
+
+The following features are planned for future development but are currently on hold due to time and cost constraints:
+
+1. **Voice Functionality**:
+   - Add the ability for the app to interact with users via voice input and output.
+   - Use third-party or open-source software to process voice commands and generate spoken responses.
+
+2. **Voice Mimicry**:
+   - Implement functionality to mimic a specific voice for the assistant, making interactions more personalized.
+   - Use advanced voice synthesis tools to replicate tone, pitch, and style.
+
+3. **Tone Mimicry in Writing**:
+   - Enhance the assistant's ability to mimic specific tones or writing styles based on user preferences or context.
+   - Allow users to specify a tone (e.g., formal, casual, persuasive) for responses.
+
+These features would significantly enhance the app's interactivity and personalization. However, they require additional resources and development time, making them part of the long-term roadmap.
+
+---
+
 ## License
 
 This project is licensed under the MIT License.
