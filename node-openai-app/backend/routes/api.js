@@ -11,7 +11,6 @@ const openai = new OpenAI({
 const model = process.env.OPEN_AI_MODEL || 'gpt-3.5-turbo'; // Default to gpt-3.5-turbo if not set
 const NAME = process.env.NAME || 'Random Bot'; // Default to Bot
 
-
 // Helper function to find and read a file based on a keyword
 const findFileContent = (folderPath, keyword) => {
     const files = fs.readdirSync(folderPath);
@@ -28,21 +27,46 @@ const readmePath = path.join(__dirname, '../../README.md');
 const readme = fs.existsSync(readmePath) ? fs.readFileSync(readmePath, 'utf8') : 'No README file available.';
 
 router.post('/openai', async (req, res) => {
-    const { input, keyword = 'Standard' } = req.body; // Default keyword is 'Standard'
+    const { input } = req.body;
+
+    // Decode the base64-encoded keyword from the session
+    let keyword = 'Standard'; // Default to 'Standard'
+    if (req.session.keyword) {
+        try {
+            keyword = req.session.keyword;
+        } catch (error) {
+            console.error('Error setting keyword:', error);
+            keyword = 'Standard'; // Fallback to default if decoding fails
+        }
+    }
+
+    console.log(`Decoded keyword: ${keyword}`); // Log the decoded keyword for debugging
 
     try {
         // Define folder paths
+        const bioFolder = path.join(__dirname, '../texts/bio');
+        const companyFolder = path.join(__dirname, '../texts/company');
         const coversFolder = path.join(__dirname, '../texts/covers');
         const cvFolder = path.join(__dirname, '../texts/cv');
         const jobsFolder = path.join(__dirname, '../texts/jobs');
+        const userFolder = path.join(__dirname, '../texts/user');
 
         // Find and read the contents of the files
         const cover = findFileContent(coversFolder, keyword) || 'No cover letter available.';
         const CV = findFileContent(cvFolder, keyword) || 'No CV available.';
         const job = findFileContent(jobsFolder, keyword) || 'No job description available.';
+        const bio = findFileContent(bioFolder, keyword) || findFileContent(bioFolder, 'Standard');
+        const company = findFileContent(companyFolder, keyword) || 'an unknown company (please ask for details).';
+        const user = findFileContent(userFolder, keyword) || 'an unknown user (please ask for a name if needed)';
 
-        // Default initial prompt
-        const initialPrompt = `Hello! I am ${NAME}, your virtual assistant. I can help you with questions about my CV, cover letter, or job descriptions. Feel free to ask me anything!`;
+        if (keyword == 'Standard') {
+            // Default initial prompt
+            initialPrompt = `Hello! I'm a digital 'twin' of ${NAME}. Feel free to ask me anything!`;
+        }
+        else {
+            // Custom initial prompt based on the keyword
+            initialPrompt = `Hello! I'm a digital 'twin' of ${NAME}. I understand you probably work with or for ${keyword} - can I check who you are and how I can help today? This conversation is not logged :)`;
+        }
 
         // Call OpenAI API
         const response = await openai.chat.completions.create({
@@ -58,9 +82,15 @@ router.post('/openai', async (req, res) => {
 
                                 Cover Letter: ${cover}
 
+                                ${NAME}'s Biography: ${bio}
+
                                 Optional Job Description: ${job}
 
-                            You're chatting with recruiters or people interested in ${NAME}'s profile. Always respond as if you are ${NAME}, speaking naturally and conversationally.
+                                Optional User: ${user}
+
+                                Optional Company: ${company}
+
+                            You're chatting with ${user} (check who the user is if necessary), who may be interested ${NAME}'s profile, CV and Bio and/or recruiting them for ${company}. Always respond as if you are ${NAME}, speaking naturally and conversationally.
 
                             Keep answers concise and professional, while being friendly and helpful. Share honest and accurate details—never invent or exaggerate information about:
 
@@ -104,6 +134,27 @@ router.post('/openai', async (req, res) => {
         }
         res.status(500).json({ error: 'An error occurred while processing your request.' });
     }
+});
+
+router.get('/initial-prompt', (req, res) => {
+    // Retrieve the keyword from the session
+    const keyword = req.session.keyword || 'Standard';
+
+    console.log(`Keyword for initial prompt: ${keyword}`); // Log the keyword for debugging
+
+    // Set the initial prompt based on the keyword
+    let initialPrompt;
+    if (keyword === 'Standard') {
+        // Default initial prompt
+        initialPrompt = `Hello! 👋 I'm a digital 'twin' of ${NAME}. Feel free to ask me anything! 😊`;
+    }
+    else {
+        // Custom initial prompt based on the keyword
+        initialPrompt = `Hello! 👋 I'm a digital 'twin' of ${NAME}. I understand you likely work with or for ${keyword} - can I check who you are and how I can help today? This conversation is not logged 😊`;
+    }
+
+    // Send the initial prompt back to the client
+    res.json({ initialPrompt });
 });
 
 module.exports = router;

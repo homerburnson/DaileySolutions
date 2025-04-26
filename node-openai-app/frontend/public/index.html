@@ -312,23 +312,26 @@
 
     <script src="App.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             const responseContainer = document.getElementById('responseContainer');
 
-            // Initial prompt
-            const initialPrompt = `Hi there! 👋 I'm Luke.
-                                    Feel free to ask me anything about my background, experience, or what I'm looking for next.
-                                    You can explore my CV, cover letter, or a specific role you're hiring for—just drop a message!
+            // Fetch the initial prompt from the server
+            try {
+                const response = await fetch('/api/initial-prompt');
+                const data = await response.json();
+                const initialPrompt = data.initialPrompt;
+                console.log('Response:', data);
 
-                                    Looking forward to chatting with you 😊`;
+                // Create a response message element
+                const initialMessageDiv = document.createElement('div');
+                initialMessageDiv.className = 'message response-message';
+                initialMessageDiv.innerHTML = `<img src="images/profile.jpg" alt="Luke Dailey"> <span>${initialPrompt}</span>`;
 
-            // Create a response message element
-            const initialMessageDiv = document.createElement('div');
-            initialMessageDiv.className = 'message response-message';
-            initialMessageDiv.innerHTML = `<img src="images/profile.jpg" alt="Luke Dailey"> <span>${initialPrompt}</span>`;
-
-            // Add the initial message to the response container
-            responseContainer.appendChild(initialMessageDiv);
+                // Add the initial message to the response container
+                responseContainer.appendChild(initialMessageDiv);
+            } catch (error) {
+                console.error('Error fetching initial prompt:', error);
+            }
         });
 
         document.addEventListener('DOMContentLoaded', () => {

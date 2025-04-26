@@ -1,15 +1,15 @@
 require('dotenv').config({ path: '../.env' });
 const express = require('express');
-const { auth, requiresAuth} = require('express-openid-connect');
+const { auth, requiresAuth } = require('express-openid-connect');
 const bodyParser = require('body-parser');
 const apiRoutes = require('./routes/api');
 const uploadRoutes = require('./routes/upload');
 const path = require('path');
 const fs = require('fs');
+const session = require('express-session');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-
 
 // Auth0 configuration
 const config = {
@@ -24,18 +24,59 @@ const config = {
 // Middleware for Auth0
 app.use(auth(config));
 
+// Configure session middleware
+app.use(
+    session({
+        secret: process.env.SESSION_SECRET || 'your-secret-key', // Use a secure secret key
+        resave: false,
+        saveUninitialized: true,
+        cookie: { secure: false }, // Set to true if using HTTPS
+    })
+);
+
 // Middleware for parsing JSON and URL-encoded data
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // Serve static files from the frontend/public directory
-app.use(express.static(path.join(__dirname, '../frontend/public')));
+app.use(express.static(path.join(__dirname, '../frontend/public'), { index : false }));
 
 // API routes
 app.use('/api', apiRoutes);
 
-// Serve index.html on the root route
+app.get('/test-session', (req, res) => {
+    const keyword = req.session.keyword || 'No keyword set';
+    res.send(`Keyword in session: ${keyword}`);
+});
+
+// Serve index.html on the root route and handle query parameters
 app.get('/', (req, res) => {
+    console.log('Root route accessed'); // Log when the route is accessed
+
+    // Check if the query parameter exists
+    if (req.query.state) {
+        console.log(`Query parameter 'state' received: ${req.query.state}`);
+    } else {
+        console.log('No query parameter "state" received');
+    }
+
+    // Decode the base64-encoded state
+    let keyword = 'Standard'; // Default to 'Standard'
+    if (req.query.state) {
+        try {
+            keyword = Buffer.from(req.query.state, 'base64').toString('utf8'); // Decode base64 to UTF-8
+            console.log(`Decoded keyword: ${keyword}`);
+        } catch (error) {
+            console.error('Error decoding base64 state:', error);
+            keyword = 'Standard'; // Fallback to default if decoding fails
+        }
+    }
+
+    // Store the decoded keyword in the session
+    req.session.keyword = keyword;
+    console.log(`Keyword stored in session: ${req.session.keyword}`);
+
+    // Serve the index.html file
     res.sendFile(path.join(__dirname, '../frontend/public', 'index.html'));
 });
 

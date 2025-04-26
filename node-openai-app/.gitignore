@@ -8,6 +8,9 @@
 /backend/texts/covers/*
 /backend/texts/cv/*
 /backend/texts/jobs/*
+/backend/texts/bio/*
+/backend/texts/company/*
+/backend/texts/user/*
 
 # Logs
 /logs
