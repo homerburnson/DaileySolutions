@@ -31,51 +31,54 @@ document.addEventListener('DOMContentLoaded', async () => {
         const userMessage = userInput.value;
         if (!userMessage.trim()) return;
 
-        // Show the response container after the first query
-        if (responseContainer.style.display === 'none') {
-            responseContainer.style.display = 'block';
-        }
-
         // Add user message to the chat
         const userMessageDiv = document.createElement('div');
         userMessageDiv.className = 'message user-message';
+        if (document.body.classList.contains('dark-mode')) {
+            userMessageDiv.classList.add('dark-mode'); // Apply dark mode styling
+        }
         userMessageDiv.textContent = userMessage;
         responseContainer.appendChild(userMessageDiv);
 
+        // Add "typing" message
+        const typingMessageDiv = document.createElement('div');
+        typingMessageDiv.className = 'message response-message';
+        if (document.body.classList.contains('dark-mode')) {
+            typingMessageDiv.classList.add('dark-mode'); // Apply dark mode styling
+        }
+        typingMessageDiv.textContent = 'Luke is typing...';
+        responseContainer.appendChild(typingMessageDiv);
+
         try {
-            const keyword = "Standard";
             const response = await fetch('/api/openai', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ input: userMessage, keyword }),
+                body: JSON.stringify({ input: userMessage }),
             });
 
             const data = await response.json();
 
-            // Add response message with typing effect
+            // Remove "typing" message
+            typingMessageDiv.remove();
+
+            // Add response message
             const responseMessageDiv = document.createElement('div');
             responseMessageDiv.className = 'message response-message';
+            if (document.body.classList.contains('dark-mode')) {
+                responseMessageDiv.classList.add('dark-mode'); // Apply dark mode styling
+            }
+            responseMessageDiv.textContent = data.response;
             responseContainer.appendChild(responseMessageDiv);
-
-            // Typing effect
-            const text = data.response;
-            let index = 0;
-
-            const typingInterval = setInterval(() => {
-                if (index < text.length) {
-                    responseMessageDiv.textContent += text[index];
-                    index++;
-                } else {
-                    clearInterval(typingInterval);
-                }
-            }, 1); // Adjust typing speed (50ms per character)
 
             // Scroll to the bottom of the chat
             responseContainer.scrollTop = responseContainer.scrollHeight;
         } catch (error) {
-            console.error('Error fetching response from OpenAI:', error);
+            console.error('Error fetching response:', error);
+
+            // Remove "typing" message in case of an error
+            typingMessageDiv.remove();
         }
 
         userInput.value = ''; // Clear the input field

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dailey Solutions</title>
+    <title>Luke Dailey - Senior Solutions Engineer - London</title>
     <link rel="stylesheet" href="styles/App.css">
     <style>
         /* General styles */
@@ -19,74 +19,134 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            transition: background-color 0.3s, color 0.3s; /* Smooth transition for dark mode */
         }
 
-        h1 {
-            text-align: center;
-            margin-top: 20px;
+        body.dark-mode {
+            background-color: #121212;
+            color: #f1f1f1;
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px;
+            background-color: rgba(0, 0, 0, 0.7);
             color: white;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            transition: background-color 0.3s;
         }
 
-        nav {
-            position: absolute; /* Position the navigation bar */
-            top: 20px; /* Distance from the top */
-            left: 20px; /* Distance from the left */
+        header.dark-mode {
+            background-color: rgba(30, 30, 30, 0.9);
         }
 
-        nav a {
-            text-decoration: none;
-            color: #fff;
-            background-color: #007bff;
-            padding: 10px 15px;
-            border-radius: 5px;
-            margin-right: 10px;
-            font-size: 14px;
+        header .profile {
+            display: flex;
+            align-items: center;
         }
 
-        nav a:hover {
-            background-color: #0056b3;
+        header img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin-right: 15px;
         }
 
-        /* Download CV button */
+        header h1 {
+            font-size: 1.5rem;
+            margin: 0;
+            color: #ccc;
+        }
+
+        header p {
+            font-size: 0.9rem;
+            margin: 0;
+            color: #ccc;
+        }
+
+        /* Header buttons container */
+        .header-buttons {
+            display: flex;
+            align-items: center; /* Vertically align buttons */
+            gap: 10px; /* Add spacing between buttons */
+        }
+
         #cvForm {
-            position: absolute;
-            top: 20px;
-            right: 20px;
+            margin: 0; /* Remove default margin */
         }
 
         #cvLink {
             background-color: #007bff;
-            color: #f7eacf;
+            color: white;
             border: none;
             padding: 10px 20px;
             border-radius: 5px;
             cursor: pointer;
             font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: background-color 0.3s;
         }
 
-        #cvLink:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
+        #cvLink:hover {
+            background-color: #0056b3;
+        }
+
+        #cvLink.dark-mode {
+            background-color: #444;
+            color: #f1f1f1;
+        }
+
+        #darkModeToggle {
+            background-color: #444;
+            color: #f1f1f1;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        #darkModeToggle:hover {
+            background-color: #666;
         }
 
         /* Chat container */
         #chatContainer {
             max-width: 80%;
-            margin: 0 auto;
+            margin: 20px auto;
             background: #f7eacf;
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             padding: 20px;
             display: flex;
-            flex-direction: column; /* Stack messages vertically */
-            gap: 10px; /* Add spacing between messages */
+            flex-direction: column;
+            gap: 10px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        #chatContainer.dark-mode {
+            background: #1e1e1e; /* Darker tone for chat log */
+            color: #f1f1f1;
         }
 
         /* Response container */
         #responseContainer {
             display: flex;
-            flex-direction: column; /* Stack messages vertically */
-            gap: 10px; /* Add spacing between messages */
+            flex-direction: column;
+            gap: 10px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        #responseContainer.dark-mode {
+            background-color: #2a2a2a; /* Shade of grey for dark mode */
+            color: #f1f1f1;
         }
 
         .response-message {
@@ -94,10 +154,25 @@
             color: #333;
             padding: 10px;
             border-radius: 10px;
-            max-width: 60%; /* Limit message width */
-            word-wrap: break-word; /* Ensure long words wrap */
-            align-self: flex-start; /* Align to the left */
+            max-width: 60%;
+            word-wrap: break-word;
+            align-self: flex-start;
             text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .response-message.dark-mode {
+            background-color: #444; /* Darker tone for response messages */
+            color: #f1f1f1;
+        }
+
+        .response-message img {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
         }
 
         .user-message {
@@ -105,52 +180,118 @@
             color: #f7eacf;
             padding: 10px;
             border-radius: 10px;
-            max-width: 60%; /* Limit message width */
-            word-wrap: break-word; /* Ensure long words wrap */
-            align-self: flex-end; /* Align to the right */
+            max-width: 60%;
+            word-wrap: break-word;
+            align-self: flex-end;
             text-align: right;
+            transition: background-color 0.3s, color 0.3s;
         }
 
+        .user-message.dark-mode {
+            background-color: #555; /* Darker tone for user messages */
+            color: #f1f1f1;
+        }
+
+        /* Input form */
         #inputForm {
             display: flex;
-            margin-top: 20px;
+            justify-content: center;
+            margin: 20px auto;
+            width: 100%; /* Match the width of the chat log */
+        }
+
+        .input-wrapper {
+            position: relative;
+            width: 100%; /* Ensure the wrapper matches the width of the chat log */
+            display: flex; /* Align input and button horizontally */
+            align-items: center; /* Vertically align input and button */
         }
 
         #userInput {
-            flex: 1;
+            flex: 1; /* Take up all available space */
             padding: 10px;
             border: 1px solid #ccc;
-            border-radius: 5px;
+            border-radius: 5px 0 0 5px; /* Rounded corners on the left */
             font-size: 14px;
+            height: 40px; /* Match the height of the button */
+            box-sizing: border-box; /* Ensure padding is included in the height */
+            transition: background-color 0.3s, color 0.3s;
         }
 
-        #inputForm button {
+        #userInput.dark-mode {
+            background-color: #333; /* Darker tone for input box */
+            color: #f1f1f1;
+            border: 1px solid #555; /* Adjust border color for dark mode */
+        }
+
+        #userInput::placeholder {
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+
+        #sendButton {
             background-color: #007bff;
-            color: #f7eacf;
+            color: white;
             border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
+            padding: 0 15px;
+            border-radius: 0 5px 5px 0; /* Rounded corners on the right */
             cursor: pointer;
-            font-size: 14px;
-            margin-left: 10px;
+            font-size: 16px;
+            height: 40px; /* Match the height of the input field */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box; /* Ensure padding is included in the height */
         }
 
-        #inputForm button:hover {
+        #sendButton:hover {
             background-color: #0056b3;
+        }
+
+        #sendButton svg {
+            fill: white; /* Match the button text color */
+        }
+
+        #sendButton:hover svg {
+            fill: #f7eacf; /* Change color on hover */
+        }
+
+        @media (max-width: 768px) {
+            #chatContainer {
+                max-width: 95%;
+            }
+
+            header h1 {
+                font-size: 1.2rem;
+            }
+
+            header p {
+                font-size: 0.8rem;
+            }
+
+            #cvLink {
+                font-size: 12px;
+                padding: 8px 15px;
+            }
         }
     </style>
 </head>
 <body>
-    <nav>
-        <a href="/login">Log In</a>
-        <a href="/logout">Log Out</a>
-    </nav>
-    <h1>Talking to Luke Dailey</h1>
-
-    <!-- Button to download Luke's CV -->
-    <form id="cvForm" action="#" method="get">
-        <button id="cvLink" type="submit">Loading CV...</button>
-    </form>
+    <header>
+        <div class="profile">
+            <img src="images/profile.jpg" alt="Luke Dailey">
+            <div>
+                <h1>Luke Dailey</h1>
+                <p>Senior Solutions Engineer | Legal Tech Expert | London</p>
+            </div>
+        </div>
+        <div class="header-buttons">
+            <form id="cvForm" action="#" method="get">
+                <button id="cvLink" type="submit">📄 Download My CV</button>
+            </form>
+            <button id="darkModeToggle" class="dark-mode-toggle">🌙 Dark Mode</button>
+        </div>
+    </header>
 
     <!-- Chat container -->
     <div id="chatContainer">
@@ -158,8 +299,14 @@
             <!-- Messages will be dynamically added here -->
         </div>
         <form id="inputForm">
-            <input type="text" id="userInput" placeholder="Enter your query" required>
-            <button type="submit">Submit</button>
+            <div class="input-wrapper">
+                <input type="text" id="userInput" placeholder="e.g., Tell me about your latest project" required>
+                <button type="submit" id="sendButton">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="16px" height="16px">
+                        <path d="M2 21l21-9L2 3v7l15 2-15 2z"/>
+                    </svg>
+                </button>
+            </div>
         </form>
     </div>
 
@@ -178,10 +325,48 @@
             // Create a response message element
             const initialMessageDiv = document.createElement('div');
             initialMessageDiv.className = 'message response-message';
-            initialMessageDiv.textContent = initialPrompt;
+            initialMessageDiv.innerHTML = `<img src="images/profile.jpg" alt="Luke Dailey"> <span>${initialPrompt}</span>`;
 
             // Add the initial message to the response container
             responseContainer.appendChild(initialMessageDiv);
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const darkModeToggle = document.getElementById('darkModeToggle');
+            const body = document.body;
+            const chatContainer = document.getElementById('chatContainer');
+            const responseContainer = document.getElementById('responseContainer');
+            const responseMessages = document.getElementsByClassName('response-message');
+            const userMessages = document.getElementsByClassName('user-message');
+            const userInput = document.getElementById('userInput');
+            const cvLink = document.getElementById('cvLink');
+
+            // Toggle dark mode
+            darkModeToggle.addEventListener('click', () => {
+                body.classList.toggle('dark-mode');
+                chatContainer.classList.toggle('dark-mode');
+                responseContainer.classList.toggle('dark-mode');
+                cvLink.classList.toggle('dark-mode');
+                userInput.classList.toggle('dark-mode');
+
+                // Change background image for dark mode
+                if (body.classList.contains('dark-mode')) {
+                    body.style.backgroundImage = "url('images/background2.png')";
+                    darkModeToggle.textContent = '☀️ Light Mode';
+                } else {
+                    body.style.backgroundImage = "url('images/background.png')";
+                    darkModeToggle.textContent = '🌙 Dark Mode';
+                }
+
+                // Toggle dark mode for all response and user messages
+                Array.from(responseMessages).forEach(message => {
+                    message.classList.toggle('dark-mode');
+                });
+
+                Array.from(userMessages).forEach(message => {
+                    message.classList.toggle('dark-mode');
+                });
+            });
         });
     </script>
 </body>
