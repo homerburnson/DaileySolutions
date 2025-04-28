@@ -48,6 +48,7 @@ Thumbs.db
 /frontend/node_modules
 /frontend/build
 /frontend/dist
+/frontend/public/cv_public
 
 # Miscellaneous
 *.bak

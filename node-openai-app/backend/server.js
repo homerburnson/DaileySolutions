@@ -7,9 +7,24 @@ const uploadRoutes = require('./routes/upload');
 const path = require('path');
 const fs = require('fs');
 const session = require('express-session');
+const rateLimit = require('express-rate-limit');
+const logger = require('./logger'); // Import the logger
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Set EJS as the templating engine
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, '../frontend/views'));
+
+// Rate limiting middleware
+const limiter = rateLimit({
+    windowMs: 5 * 60 * 1000, // 5 minutes
+    max: 150, // Limit each IP to 150 requests per windowMs
+    message: 'Too many requests, please try again later.',
+});
+
+app.use(limiter);
 
 // Auth0 configuration
 const config = {
@@ -27,10 +42,14 @@ app.use(auth(config));
 // Configure session middleware
 app.use(
     session({
-        secret: process.env.SESSION_SECRET || 'your-secret-key', // Use a secure secret key
+        secret: process.env.SESSION_SECRET || 'your-secret-key',
         resave: false,
-        saveUninitialized: true,
-        cookie: { secure: false }, // Set to true if using HTTPS
+        saveUninitialized: false,
+        cookie: {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
+            maxAge: 60 * 60 * 1000, // 1 hour
+        },
     })
 );
 
@@ -38,8 +57,18 @@ app.use(
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+// Middleware to log all incoming requests
+app.use((req, res, next) => {
+    const sessionId = req.sessionID || 'unknown-session';
+    const keyword = req.session?.keyword || 'Standard';
+    const utcTime = new Date().toISOString();
+
+    logger.info(`Session ID: ${sessionId}, Keyword: ${keyword}, Time: ${utcTime}, Method: ${req.method}, URL: ${req.originalUrl}`);
+    next();
+});
+
 // Serve static files from the frontend/public directory
-app.use(express.static(path.join(__dirname, '../frontend/public'), { index : false }));
+app.use(express.static(path.join(__dirname, '../frontend/public'), { index: false }));
 
 // API routes
 app.use('/api', apiRoutes);
@@ -49,35 +78,13 @@ app.get('/test-session', (req, res) => {
     res.send(`Keyword in session: ${keyword}`);
 });
 
-// Serve index.html on the root route and handle query parameters
+// Serve the index.html file dynamically
 app.get('/', (req, res) => {
-    console.log('Root route accessed'); // Log when the route is accessed
-
-    // Check if the query parameter exists
-    if (req.query.state) {
-        console.log(`Query parameter 'state' received: ${req.query.state}`);
-    } else {
-        console.log('No query parameter "state" received');
-    }
-
-    // Decode the base64-encoded state
-    let keyword = 'Standard'; // Default to 'Standard'
-    if (req.query.state) {
-        try {
-            keyword = Buffer.from(req.query.state, 'base64').toString('utf8'); // Decode base64 to UTF-8
-            console.log(`Decoded keyword: ${keyword}`);
-        } catch (error) {
-            console.error('Error decoding base64 state:', error);
-            keyword = 'Standard'; // Fallback to default if decoding fails
-        }
-    }
-
-    // Store the decoded keyword in the session
-    req.session.keyword = keyword;
-    console.log(`Keyword stored in session: ${req.session.keyword}`);
-
-    // Serve the index.html file
-    res.sendFile(path.join(__dirname, '../frontend/public', 'index.html'));
+    const name = process.env.NAME || 'A Default Name'; // Fallback if NAME is not set
+    const title = process.env.TITLE || 'Working a default job'; // Fallback if NAME is not set
+    const brand = process.env.BRAND || 'As a default person'; // Fallback if NAME is not set
+    const location = process.env.LOCATION || 'In a Default location'; // Fallback if NAME is not set
+    res.render('index', { name, title, brand, location });
 });
 
 // Serve the upload.html page on the /uploaddocs route
@@ -120,7 +127,13 @@ app.get('/cv_public/filename', (req, res) => {
     });
 });
 
+// Redirect all unhandled routes to the homepage
+app.use((req, res) => {
+    console.log(`Unhandled route accessed: ${req.originalUrl}. Redirecting to homepage.`);
+    res.redirect('/');
+});
+
 // Start the server
 app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+    logger.info(`Server is running on http://localhost:${PORT}`);
 });

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Luke Dailey - Senior Solutions Engineer - London</title>
+    <title><%= name %> - <%= title %> - <%= location %></title>
     <link rel="stylesheet" href="styles/App.css">
     <style>
         /* General styles */
@@ -279,10 +279,10 @@
 <body>
     <header>
         <div class="profile">
-            <img src="images/profile.jpg" alt="Luke Dailey">
+            <img src="images/profile.jpg" alt="<%= name %>">
             <div>
-                <h1>Luke Dailey</h1>
-                <p>Senior Solutions Engineer | Legal Tech Expert | London</p>
+                <h1><%= name %></h1>
+                <p><%= title %> | <%= brand %> | <%= location %></p>
             </div>
         </div>
         <div class="header-buttons">
@@ -310,6 +310,9 @@
         </form>
     </div>
 
+    <script>
+        const NAME = "<%= name %>";
+    </script>
     <script src="App.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
@@ -325,7 +328,7 @@
                 // Create a response message element
                 const initialMessageDiv = document.createElement('div');
                 initialMessageDiv.className = 'message response-message';
-                initialMessageDiv.innerHTML = `<img src="images/profile.jpg" alt="Luke Dailey"> <span>${initialPrompt}</span>`;
+                initialMessageDiv.innerHTML = `<img src="images/profile.jpg" alt="<%= name %>"> <span>${initialPrompt}</span>`;
 
                 // Add the initial message to the response container
                 responseContainer.appendChild(initialMessageDiv);

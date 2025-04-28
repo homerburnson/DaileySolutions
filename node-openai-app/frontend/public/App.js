@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (data.filename && data.filename.endsWith('.pdf')) {
             // Set the action for the CV download form
             cvForm.action = `/cv_public/${data.filename}`;
-            cvLinkButton.textContent = `Download Luke's CV`;
+            cvLinkButton.textContent = `Download ${NAME}'s CV`;
         } else {
             cvLinkButton.textContent = 'No valid CV available';
             cvLinkButton.disabled = true; // Disable the button if no CV is available
@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (document.body.classList.contains('dark-mode')) {
             typingMessageDiv.classList.add('dark-mode'); // Apply dark mode styling
         }
-        typingMessageDiv.textContent = 'Luke is typing...';
+        typingMessageDiv.textContent = `${NAME} is typing...`;
         responseContainer.appendChild(typingMessageDiv);
 
         try {
