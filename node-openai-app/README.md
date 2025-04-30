@@ -1,6 +1,6 @@
 # Node OpenAI App
 
-This is a full-stack Node.js application that integrates with OpenAI's API to generate dynamic responses based on user input. The project includes a backend powered by Express.js and a frontend built with vanilla JavaScript and HTML.
+This is a full-stack Node.js application that integrates with OpenAI's API to generate dynamic responses based on user input. The project includes a backend powered by Express.js and a frontend built with vanilla JavaScript and HTML. It incorporates a Qdrant database (best in benchmarking tests and more scalable than Chroma).
 
 ---
 
@@ -205,11 +205,12 @@ The following features are planned for future development but are currently on h
    - Enhance the assistant's ability to mimic specific tones or writing styles based on user preferences or context.
    - Allow users to specify a tone (e.g., formal, casual, persuasive) for responses.
 
-4. **Prompt Engineering** (Immediate Term):
-   - Refine the prompts sent to the OpenAI API to ensure they are optimized for the app's use case.
+4. **Prompt Engineering**:
+   - Refine prompts sent to the OpenAI API to ensure they are optimized for the app's use case.
    - Introduce **suggested prompts** in the user interface to guide users in interacting with the app effectively.
-   - Ensure **conversation history** is referenced effectively in the context window to maintain continuity and relevance in responses.
-   - easy UI - generate a URL to access when tying docs together with a base64 paramater
+   - Upgrade **conversation history** to store conversations in a database.
+   - 
+   - easy UI - generate a URL to access when tying docs together with a base64 parameter.
 
 These features would significantly enhance the app's interactivity and personalization. However, they require additional resources and development time, making them part of a longer-term roadmap.
 

@@ -1,14 +1,23 @@
 const openai = require('../openai');
 const express = require('express');
-const fs = require('fs');
+const fs = require('fs'); // Ensure the fs module is imported at the top of the file
 const path = require('path');
 const router = express.Router();
 const logger = require('../logger'); // Import the logger
+const { OpenAIEmbeddings } = require('langchain/embeddings/openai');
+const { QdrantClient } = require('@qdrant/js-client-rest'); // Import Qdrant client
+const COLLECTION_NAME = process.env.QDRANT_COLLECTION_NAME; // Qdrant collection name
 
 const model = process.env.OPEN_AI_MODEL || 'gpt-3.5-turbo'; // Default to gpt-3.5-turbo if not set
 const NAME = process.env.NAME || 'Random Bot'; // Default to Bot
 const MAX_TOKENS = Number(process.env.MAX_TOKENS); // Limit the number of tokens
 const DEFAULT_TEMPERATURE = Number(process.env.TEMPERATURE) || 1; // Default temperature
+
+// Initialize Qdrant client
+const qdrantClient = new QdrantClient({
+    url: process.env.CLUSTERURL || 'http://localhost:6333', // Qdrant instance URL
+    apiKey: process.env.DBSECRET || '', // API key for authentication
+});
 
 // In-memory store for conversation history
 const sessionHistory = {};
@@ -51,6 +60,7 @@ router.post('/openai', async (req, res) => {
     const sessionId = req.sessionID || 'unknown-session';
     const keyword = req.session.keyword || 'Standard';
     const utcTime = new Date().toISOString();
+    const COLLECTION_NAME = process.env.QDRANT_COLLECTION_NAME;
 
     logger.info(`Session ID: ${sessionId}, Keyword: ${keyword}, Time: ${utcTime}, Route: /openai`);
 
@@ -71,66 +81,83 @@ router.post('/openai', async (req, res) => {
     logger.info(`Session ID: ${sessionId}, Temperature: ${temperature}, Input: ${input}`);
 
     try {
-        // Check if the keyword matches a key in embeddinglinks.json
-        const embeddingLinksPath = path.join(__dirname, '../embeddinglinks.json');
-        const embeddingLinks = JSON.parse(fs.readFileSync(embeddingLinksPath, 'utf8'));
-        const embeddingLink = embeddingLinks.find(link => link.key === keyword);
+        // Generate embedding for the user query
+        logger.info('Generating embedding for user query...');
+        const embeddings = new OpenAIEmbeddings({
+            openAIApiKey: process.env.OPENAI_API_KEY,
+        });
+        const queryEmbedding = await embeddings.embedQuery(input);
 
-        let context = '';
-        if (embeddingLink) {
-            // If a match is found, locate the embedding file
-            const embeddingFilePath = path.join(__dirname, '../embeddings', embeddingLink.fileName);
-            if (!fs.existsSync(embeddingFilePath)) {
-                throw new Error(`Embedding file not found: ${embeddingLink.fileName}`);
-            }
-
-            // Read the stored embedding
-            const storedEmbeddingData = JSON.parse(fs.readFileSync(embeddingFilePath, 'utf8'));
-            const storedEmbedding = storedEmbeddingData.embedding;
-
-            // Generate an embedding for the user input
-            const inputEmbeddingResponse = await openai.embeddings.create({
-                model: 'text-embedding-ada-002',
-                input: input,
-            });
-            const inputEmbedding = inputEmbeddingResponse.data[0].embedding;
-
-            // Calculate similarity between input embedding and stored embedding
-            const similarity = cosineSimilarity(inputEmbedding, storedEmbedding);
-
-            // Use the similarity to generate relevant context
-            context = `The input is ${similarity.toFixed(2)} similar to the stored context.`;
-        } else {
-            // If no match is found, fall back to searching files in /texts folders
-            const bioFolder = path.join(__dirname, '../texts/bio');
-            const companyFolder = path.join(__dirname, '../texts/company');
-            const coversFolder = path.join(__dirname, '../texts/covers');
-            const cvFolder = path.join(__dirname, '../texts/cv');
-            const jobsFolder = path.join(__dirname, '../texts/jobs');
-            const userFolder = path.join(__dirname, '../texts/user');
-
-            const cover = findFileContent(coversFolder, keyword) || 'No cover letter available.';
-            const CV = findFileContent(cvFolder, keyword) || 'No CV available.';
-            const job = findFileContent(jobsFolder, keyword) || 'No job description available.';
-            const bio = findFileContent(bioFolder, keyword) || findFileContent(bioFolder, 'Standard');
-            const company = findFileContent(companyFolder, keyword) || 'an unknown company (please ask for details).';
-            const user = findFileContent(userFolder, keyword) || 'an unknown user (please ask for a name if needed)';
-
-            context = `Bio: ${bio}\nCV: ${CV}\nCover Letter: ${cover}\nJob Description: ${job}\nCompany: ${company}\nUser: ${user}`;
+        if (!queryEmbedding || !Array.isArray(queryEmbedding)) {
+            logger.error('Invalid query embedding:', queryEmbedding);
+            return res.status(500).json({ error: 'Failed to generate a valid embedding for the query.' });
         }
+        logger.info('Embedding generated for user query.');
+        console.log('Query embedding:', queryEmbedding);
+
+        // Log the queryEmbedding to a file
+        const embeddingLogPath = path.join(__dirname, '../logs/query_embeddings.log');
+        const logEntry = `Session ID: ${sessionId}, Time: ${new Date().toISOString()}, Query Embedding: ${JSON.stringify(queryEmbedding)}\n`;
+
+        fs.appendFile(embeddingLogPath, logEntry, (err) => {
+            if (err) {
+                logger.error('Failed to log query embedding to file:', err);
+            } else {
+                logger.info('Query embedding logged to file successfully.');
+            }
+        });
+
+        // Query Qdrant for the two most similar embeddings
+        logger.info('Sending search request to Qdrant:', {
+            collection_name: COLLECTION_NAME,
+            vector: queryEmbedding,
+            filter: {
+                must: [
+                    { key: 'key', match: { value: keyword } },
+                ],
+            },
+            limit: 2,
+            with_payload: true, // Ensure payload is included in the response
+        });
+
+        const searchResults = await qdrantClient.search({
+            collection_name: COLLECTION_NAME,
+            vector: queryEmbedding,
+            filter: {
+                must: [
+                    { key: 'key', match: { value: keyword } },
+                ]
+            },
+            limit: 2, // Retrieve the top 2 most similar embeddings
+            with_payload: true, // Include payload in the response
+        });
+
+        if (!searchResults || !Array.isArray(searchResults)) {
+            logger.error('Invalid response from Qdrant:', searchResults);
+            return res.status(500).json({ error: 'Failed to retrieve similar embeddings from Qdrant.' });
+        }
+
+        if (searchResults.length === 0) {
+            logger.warn('No similar embeddings found in Qdrant.');
+            return res.status(404).json({ error: 'No relevant context found for the query.' });
+        }
+
+        // Extract the text of the two most similar chunks
+        const contextChunks = searchResults.map(result => result.payload.chunk_text);
+        logger.info(`Retrieved ${contextChunks.length} similar chunks from Qdrant.`);
+
+        // Prepare the context for OpenAI
+        const context = contextChunks.join('\n\n');
+        logger.info('Context prepared for OpenAI prompt.');
 
         // Get the session's conversation history
         const history = getSessionHistory(sessionId);
 
-        // Add the initial system message if the history is empty
-        if (history.length === 0) {
-            history.push({
-                role: "system",
-                content: `You are roleplaying as ${NAME}. Use the following context:\n\n${context}`,
-            });
-        }
-
-        // Add the user's input to the history
+        // Add the context and user input to the conversation history
+        history.push({
+            role: "system",
+            content: `Use the following context to answer the user's query:\n\n${context}`,
+        });
         history.push({
             role: "user",
             content: input,

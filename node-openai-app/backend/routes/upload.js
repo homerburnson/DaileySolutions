@@ -3,21 +3,13 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
+const { RecursiveCharacterTextSplitter } = require('langchain/text_splitter');
+const { OpenAIEmbeddings } = require('langchain/embeddings/openai');
+const { QdrantClient } = require('@qdrant/js-client-rest');
+const { v4: uuidv4 } = require('uuid'); // Import UUID library
 
 const router = express.Router();
 const directories = ['covers', 'cv', 'jobs','bio', 'company', 'user'];
-
-// Path to the embeddings folder and embeddinglinks.json
-const embeddingsFolder = path.join(__dirname, '../embeddings');
-const embeddingLinksPath = path.join(__dirname, '../embeddinglinks.json');
-
-// Ensure the embeddings folder and embeddinglinks.json exist
-if (!fs.existsSync(embeddingsFolder)) {
-    fs.mkdirSync(embeddingsFolder);
-}
-if (!fs.existsSync(embeddingLinksPath)) {
-    fs.writeFileSync(embeddingLinksPath, JSON.stringify([]));
-}
 
 // Ensure directories exist
 directories.forEach((dir) => {
@@ -26,18 +18,6 @@ directories.forEach((dir) => {
         fs.mkdirSync(fullPath, { recursive: true });
     }
 });
-
-// Check embedding links exist
-let embeddingLinks = [];
-try {
-    console.log('Reading embedding links from:', embeddingLinksPath);
-    const fileContent = fs.readFileSync(embeddingLinksPath, 'utf8');
-    embeddingLinks = fileContent ? JSON.parse(fileContent) : [];
-} catch (error) {
-    console.error('Error reading or parsing embeddingLinks.json:', error);
-    // Initialize with an empty array if the file is invalid
-    embeddingLinks = [];
-}
 
 // Multer configuration
 const storage = multer.diskStorage({
@@ -205,15 +185,104 @@ router.put('/rename', (req, res) => {
     });
 });
 
-// Generate embeddings for selected files
+// Qdrant client setup
+const qdrantClient = new QdrantClient({
+    url: process.env.CLUSTERURL, // Qdrant instance URL
+    apiKey: process.env.DBSECRET, // Optional API key if authentication is enabled
+});
+
+// Collection name in Qdrant
+const COLLECTION_NAME = process.env.COLLECTION_NAME || 'default_collection'; // Default collection name
+
+// Ensure the collection exists in Qdrant
+async function ensureCollection() {
+    const collections = await qdrantClient.getCollections();
+    if (!collections.collections.some(c => c.name === COLLECTION_NAME)) {
+        await qdrantClient.createCollection(COLLECTION_NAME, {
+            vectors: {
+                size: 1536, // Size of OpenAI embeddings
+                distance: 'Cosine', // Use cosine similarity for vector search
+            },
+        });
+        console.log(`Collection "${COLLECTION_NAME}" created in Qdrant.`);
+    }
+}
+ensureCollection();
+
+// Chunk documents using LangChain
+async function chunkDocument(content) {
+    console.log('Starting document chunking...');
+    const splitter = new RecursiveCharacterTextSplitter({
+        chunkSize: 1000, // Maximum size of each chunk
+        chunkOverlap: 100, // Overlap between chunks
+    });
+
+    const chunks = await splitter.createDocuments([content]);
+    console.log(`Document chunked into ${chunks.length} chunks.`);
+    return chunks.map(chunk => chunk.pageContent); // Extract chunk content
+}
+
+// Generate embeddings for chunks
+async function generateEmbeddings(chunks) {
+    console.log('Initializing OpenAI embeddings...');
+    const embeddings = new OpenAIEmbeddings({
+        openAIApiKey: process.env.OPENAI_API_KEY, // Your OpenAI API key
+    });
+
+    const chunkEmbeddings = [];
+    for (const [index, chunk] of chunks.entries()) {
+        console.log(`Generating embedding for chunk ${index + 1}/${chunks.length}`);
+        const embedding = await embeddings.embedQuery(chunk);
+        chunkEmbeddings.push(embedding);
+    }
+
+    console.log('Finished generating embeddings for all chunks.');
+    return chunkEmbeddings;
+}
+
+// Store embeddings in Qdrant
+async function storeEmbeddingsInQdrant(key, chunks, embeddings) {
+    console.log(`Storing embeddings in Qdrant for key: ${key}`);
+    const points = chunks.map((chunk, index) => {
+        const pointId = uuidv4(); // Generate a valid UUID for the point ID
+        console.log(`Generated point ID: ${pointId} for chunk index: ${index}`);
+        return {
+            id: pointId, // Use UUID as the point ID
+            vector: embeddings[index], // Embedding vector
+            payload: {
+                key, // User-provided key
+                chunk_id: index, // Chunk ID
+                chunk_text: chunk, // Original chunk text
+            },
+        };
+    });
+
+    try {
+        console.log(`Upserting ${points.length} points into Qdrant collection: ${COLLECTION_NAME}`);
+        await qdrantClient.upsert(COLLECTION_NAME, { points });
+        console.log(`Successfully stored embeddings in Qdrant for key: ${key}`);
+    } catch (error) {
+        console.error('Error storing embeddings in Qdrant:', error);
+        throw error;
+    }
+}
+
+// Generate embeddings for selected files and store in Qdrant
 router.post('/generate-multi-embedding', async (req, res) => {
-    const { files } = req.body;
+    const { files, key } = req.body;
 
     if (!files || !Array.isArray(files) || files.length === 0) {
+        console.error('No files specified for embedding generation.');
         return res.status(400).json({ error: 'No files specified.' });
     }
 
+    if (!key) {
+        console.error('Key is required for embedding generation.');
+        return res.status(400).json({ error: 'Key is required.' });
+    }
+
     try {
+        console.log(`Starting embedding generation for key: ${key}`);
         let combinedContent = '';
         const fileNames = [];
 
@@ -223,140 +292,160 @@ router.post('/generate-multi-embedding', async (req, res) => {
             const filePath = path.join(folderPath, fileName);
 
             if (!fs.existsSync(filePath)) {
+                console.error(`File not found: ${fileName} in folder: ${folder}`);
                 return res.status(404).json({ error: `File not found: ${fileName} in ${folder}` });
             }
 
+            console.log(`Reading file: ${fileName} from folder: ${folder}`);
             const fileContent = fs.readFileSync(filePath, 'utf8');
             combinedContent += fileContent + '\n';
             fileNames.push(fileName);
         }
 
-        // Generate embedding using OpenAI API
-        const response = await openai.embeddings.create({
-            model: 'text-embedding-ada-002',
-            input: combinedContent,
-        });
+        console.log('Finished reading and combining file content.');
+        console.log('Starting document chunking...');
+        const chunks = await chunkDocument(combinedContent);
+        console.log(`Document chunked into ${chunks.length} chunks.`);
 
-        const embedding = response.data[0].embedding;
+        console.log('Starting embedding generation for chunks...');
+        const embeddings = await generateEmbeddings(chunks);
+        console.log(`Generated embeddings for ${embeddings.length} chunks.`);
 
-        // Save the embedding to the embeddings folder
-        const embeddingsFolder = path.join(__dirname, '../embeddings');
-        if (!fs.existsSync(embeddingsFolder)) {
-            fs.mkdirSync(embeddingsFolder);
-        }
+        console.log('Storing embeddings in Qdrant...');
+        await storeEmbeddingsInQdrant(key, chunks, embeddings);
 
-        const embeddingFileName = fileNames.join('_').replace(/[^a-zA-Z0-9_-]/g, '_') + '.json';
-        const embeddingFilePath = path.join(embeddingsFolder, embeddingFileName);
-
-        fs.writeFileSync(embeddingFilePath, JSON.stringify({ embedding }, null, 2));
-
-        res.json({ message: 'Embedding generated successfully.', embedding, fileName: embeddingFileName });
+        console.log('Embedding generation and storage completed successfully.');
+        res.json({ message: 'Embeddings generated and stored successfully.', key });
     } catch (error) {
-        console.error('Error generating embedding:', error);
-        res.status(500).json({ error: 'Failed to generate embedding.' });
+        console.error('Error generating embeddings:', error);
+        res.status(500).json({ error: 'Failed to generate embeddings.' });
     }
 });
 
-// Save embedding with a key-value pair
-router.post('/save-embedding', (req, res) => {
-
-    const { key, fileName } = req.body;
+// Save embedding with a key-value pair in Qdrant
+router.post('/save-embedding', async (req, res) => {
+    const { key, chunks, embeddings } = req.body;
 
     console.log('Incoming request:', req.body); // Log the request body
 
-    if (!key || !fileName) {
-        console.error('Missing key or fileName');
-        return res.status(400).json({ error: 'Key and file name are required.' });
+    if (!key || !chunks || !embeddings || chunks.length !== embeddings.length) {
+        console.error('Invalid request data');
+        return res.status(400).json({ error: 'Key, chunks, and embeddings are required, and their lengths must match.' });
     }
 
     try {
-        // Read the existing embedding links
-        console.log('Reading embedding links from:', embeddingLinksPath);
-        const embeddingLinks = JSON.parse(fs.readFileSync(embeddingLinksPath, 'utf8'));
-
-        // Check if the key already exists
-        if (embeddingLinks.some(link => link.key === key)) {
-            console.error('Duplicate key:', key);
-            return res.status(400).json({ error: 'Key already exists. Please use a unique key.' });
+        // Ensure the collection exists in Qdrant
+        const collectionName = `${key}`;
+        const collections = await qdrantClient.getCollections();
+        if (!collections.collections.some(c => c.name === collectionName)) {
+            await qdrantClient.createCollection(collectionName, {
+                vectors: {
+                    size: 1536, // Size of OpenAI embeddings
+                    distance: 'Cosine', // Use cosine similarity for vector search
+                },
+            });
+            console.log(`Collection "${collectionName}" created in Qdrant.`);
         }
 
-        // Add the new key-value pair
-        embeddingLinks.push({ key, fileName });
-        console.log('Updated embedding links:', embeddingLinks);
+        // Prepare points for Qdrant
+        const points = chunks.map((chunk, index) => ({
+            id: `${key}-${index}`, // Unique ID for each chunk
+            vector: embeddings[index], // Embedding vector
+            payload: {
+                key, // User-provided key
+                chunk_id: index, // Chunk ID
+                chunk_text: chunk, // Original chunk text
+            },
+        }));
 
-        // Save the updated embedding links
-        fs.writeFileSync(embeddingLinksPath, JSON.stringify(embeddingLinks, null, 2));
-        console.log('Embedding saved successfully.');
+        // Insert points into Qdrant
+        await qdrantClient.upsert(collectionName, { points });
+        console.log(`Embeddings stored in Qdrant for key: ${key}`);
 
-        res.json({ message: 'Embedding saved successfully.' });
+        res.json({ message: 'Embedding saved successfully in Qdrant.', key });
     } catch (error) {
-        console.error('Error saving embedding:', error);
-        res.status(500).json({ error: 'Failed to save embedding.' });
+        console.error('Error saving embedding in Qdrant:', error);
+        res.status(500).json({ error: 'Failed to save embedding in Qdrant.' });
     }
 });
 
-// Get all embedding links
-router.get('/embedding-links', (req, res) => {
+// Get all embedding collections from Qdrant
+router.get('/embedding-links', async (req, res) => {
     try {
-        const embeddingLinks = JSON.parse(fs.readFileSync(embeddingLinksPath, 'utf8'));
+        const collections = await qdrantClient.getCollections();
+        const embeddingLinks = collections.collections.map(collection => ({
+            key: collection.name,
+            collectionName: collection.name,
+        }));
+
         res.json(embeddingLinks);
     } catch (error) {
-        console.error('Error reading embedding links:', error);
-        res.status(500).json({ error: 'Failed to load embedding links.' });
+        console.error('Error fetching embedding collections from Qdrant:', error);
+        res.status(500).json({ error: 'Failed to load embedding collections.' });
     }
 });
 
-// Edit an embedding key
-router.put('/edit-embedding-key', (req, res) => {
-    const { index, oldKey, newKey, fileName } = req.body;
+// Rename an embedding collection in Qdrant
+router.put('/edit-embedding-key', async (req, res) => {
+    const { oldKey, newKey } = req.body;
 
-    if (!newKey || !fileName) {
-        return res.status(400).json({ error: 'New key and file name are required.' });
+    if (!oldKey || !newKey) {
+        return res.status(400).json({ error: 'Both oldKey and newKey must be provided.' });
     }
 
-    try {
-        const embeddingLinks = JSON.parse(fs.readFileSync(embeddingLinksPath, 'utf8'));
+    const oldCollectionName = `${oldKey}`;
+    const newCollectionName = `${newKey}`;
 
-        // Check if the new key already exists
-        if (embeddingLinks.some(link => link.key === newKey)) {
-            return res.status(400).json({ error: 'New key already exists. Please use a unique key.' });
+    try {
+        const collections = await qdrantClient.getCollections();
+        if (!collections.collections.some(c => c.name === oldCollectionName)) {
+            return res.status(404).json({ error: `Collection "${oldCollectionName}" does not exist.` });
         }
 
-        // Update the key
-        embeddingLinks[index].key = newKey;
-        fs.writeFileSync(embeddingLinksPath, JSON.stringify(embeddingLinks, null, 2));
+        if (collections.collections.some(c => c.name === newCollectionName)) {
+            return res.status(400).json({ error: `Collection "${newCollectionName}" already exists.` });
+        }
 
-        res.json({ message: 'Embedding key updated successfully.' });
+        const points = await qdrantClient.scroll(oldCollectionName, {});
+
+        await qdrantClient.createCollection(newCollectionName, {
+            vectors: {
+                size: 1536,
+                distance: 'Cosine',
+            },
+        });
+
+        await qdrantClient.upsert(newCollectionName, { points: points.result });
+        await qdrantClient.deleteCollection(oldCollectionName);
+
+        res.json({ message: `Collection renamed successfully from "${oldKey}" to "${newKey}".` });
     } catch (error) {
-        console.error('Error editing embedding key:', error);
-        res.status(500).json({ error: 'Failed to edit embedding key.' });
+        console.error('Error renaming embedding collection in Qdrant:', error);
+        res.status(500).json({ error: 'Failed to rename embedding collection.' });
     }
 });
 
 // Delete an embedding
-router.delete('/delete-embedding', (req, res) => {
-    const { key, fileName } = req.body;
+router.delete('/delete-embedding', async (req, res) => {
+    const { key } = req.body;
 
-    if (!key || !fileName) {
-        return res.status(400).json({ error: 'Key and file name are required.' });
+    if (!key) {
+        return res.status(400).json({ error: 'Key is required.' });
     }
 
-    try {
-        // Remove the key-value pair from embeddinglinks.json
-        const embeddingLinks = JSON.parse(fs.readFileSync(embeddingLinksPath, 'utf8'));
-        const updatedLinks = embeddingLinks.filter(link => link.key !== key);
-        fs.writeFileSync(embeddingLinksPath, JSON.stringify(updatedLinks, null, 2));
+    const collectionName = `${key}`;
 
-        // Delete the embedding file
-        const embeddingFilePath = path.join(embeddingsFolder, fileName);
-        if (fs.existsSync(embeddingFilePath)) {
-            fs.unlinkSync(embeddingFilePath);
+    try {
+        const collections = await qdrantClient.getCollections();
+        if (!collections.collections.some(c => c.name === collectionName)) {
+            return res.status(404).json({ error: `Collection "${collectionName}" does not exist.` });
         }
 
-        res.json({ message: 'Embedding deleted successfully.' });
+        await qdrantClient.deleteCollection(collectionName);
+        res.json({ message: `Collection "${key}" deleted successfully.` });
     } catch (error) {
-        console.error('Error deleting embedding:', error);
-        res.status(500).json({ error: 'Failed to delete embedding.' });
+        console.error('Error deleting embedding collection in Qdrant:', error);
+        res.status(500).json({ error: 'Failed to delete embedding collection.' });
     }
 });
 

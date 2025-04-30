@@ -93,6 +93,9 @@
             </div>
             <button type="button" id="addSelector">Add Folder/File Selector</button>
             <br><br>
+            <label for="embeddingKeyInput">Enter a Key for the Embedding:</label>
+            <input type="text" id="embeddingKeyInput" placeholder="Enter a unique key (e.g., my-key)" required>
+            <br><br>
             <button type="submit">Generate Embedding</button>
         </form>
         <div id="embeddingResult"></div>
@@ -108,6 +111,12 @@
         </form>
         <div id="saveEmbeddingResult"></div>
     </div>
+
+    <h2>Manage Qdrant Collections</h2>
+    <section>
+        <button id="loadCollections">Load Collections</button>
+        <div id="collectionsList"></div>
+    </section>
 
     <script>
         const uploadForm = document.getElementById('uploadForm');
@@ -336,13 +345,20 @@
             return { folder, fileName };
         });
 
+        const embeddingKey = document.getElementById('embeddingKeyInput').value.trim();
+
+        if (!embeddingKey) {
+            alert('Please enter a key for the embedding.');
+            return;
+        }
+
         try {
             const response = await fetch('/upload/generate-multi-embedding', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ files }),
+                body: JSON.stringify({ files, key: embeddingKey }),
             });
 
             const data = await response.json();
@@ -350,13 +366,8 @@
             if (response.ok) {
                 document.getElementById('embeddingResult').innerHTML = `
                     <p>Embedding generated successfully:</p>
-                    <pre>${JSON.stringify(data.embedding, null, 2)}</pre>
-                    <p>Saved as: ${data.fileName}</p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
                 `;
-
-                // Show the save embedding section
-                document.getElementById('saveEmbeddingSection').style.display = 'block';
-                document.getElementById('saveEmbeddingForm').dataset.fileName = data.fileName;
             } else {
                 document.getElementById('embeddingResult').innerHTML = `
                     <p>Error: ${data.error}</p>
@@ -489,6 +500,89 @@
         } catch (error) {
             console.error('Error deleting embedding:', error);
             alert('Failed to delete embedding.');
+        }
+    }
+
+    const collectionsList = document.getElementById('collectionsList');
+
+    // Load collections from Qdrant
+    document.getElementById('loadCollections').addEventListener('click', async () => {
+        try {
+            const response = await fetch('/upload/embedding-links');
+            const data = await response.json();
+
+            if (response.ok) {
+                collectionsList.innerHTML = '';
+                data.forEach((collection) => {
+                    const collectionDiv = document.createElement('div');
+                    collectionDiv.innerHTML = `
+                        <p><strong>Key:</strong> ${collection.key}</p>
+                        <p><strong>Collection Name:</strong> ${collection.collectionName}</p>
+                        <button onclick="renameCollection('${collection.key}')">Rename</button>
+                        <button onclick="deleteCollection('${collection.key}')">Delete</button>
+                        <hr>
+                    `;
+                    collectionsList.appendChild(collectionDiv);
+                });
+            } else {
+                alert('Failed to load collections.');
+            }
+        } catch (error) {
+            console.error('Error loading collections:', error);
+            alert('Failed to load collections.');
+        }
+    });
+
+    // Rename a collection
+    async function renameCollection(oldKey) {
+        const newKey = prompt('Enter a new key for the collection:', oldKey);
+        if (!newKey || newKey === oldKey) return;
+
+        try {
+            const response = await fetch('/upload/edit-embedding-key', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ oldKey, newKey }),
+            });
+
+            const result = await response.json();
+            if (response.ok) {
+                alert(result.message);
+                document.getElementById('loadCollections').click(); // Reload collections
+            } else {
+                alert(result.error);
+            }
+        } catch (error) {
+            console.error('Error renaming collection:', error);
+            alert('Failed to rename collection.');
+        }
+    }
+
+    // Delete a collection
+    async function deleteCollection(key) {
+        if (!confirm(`Are you sure you want to delete the collection for key "${key}"?`)) return;
+
+        try {
+            const response = await fetch('/upload/delete-embedding', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ key }),
+            });
+
+            const result = await response.json();
+            if (response.ok) {
+                alert(result.message);
+                document.getElementById('loadCollections').click(); // Reload collections
+            } else {
+                alert(result.error);
+            }
+        } catch (error) {
+            console.error('Error deleting collection:', error);
+            alert('Failed to delete collection.');
         }
     }
     </script>
