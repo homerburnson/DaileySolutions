@@ -77,6 +77,38 @@
     <br><br>
     <button id="renameFileButton">Rename File</button>
 
+    <h2>Manage Embeddings</h2>
+    <section>
+    <button id="loadEmbeddings">Load Embeddings</button>
+    <div id="embeddingLinksList"></div>
+    </section>
+
+    <!-- Embedding Generation Functionality -->
+    <h1>Generate Embeddings from Multiple Files</h1>
+    <section>
+        <h2>Select Files to Generate Embedding</h2>
+        <form id="embeddingForm">
+            <div id="folderFileSelectors">
+                <!-- Dropdowns for folder and file selection will be dynamically added here -->
+            </div>
+            <button type="button" id="addSelector">Add Folder/File Selector</button>
+            <br><br>
+            <button type="submit">Generate Embedding</button>
+        </form>
+        <div id="embeddingResult"></div>
+    </section>
+
+    <div id="saveEmbeddingSection" style="display: none;">
+        <h2>Save Embedding</h2>
+        <form id="saveEmbeddingForm">
+            <label for="embeddingKey">Enter a Key for the Embedding:</label>
+            <input type="text" id="embeddingKey" placeholder="Enter a unique key (e.g., my-key)" required>
+            <br><br>
+            <button type="submit">Save Embedding</button>
+        </form>
+        <div id="saveEmbeddingResult"></div>
+    </div>
+
     <script>
         const uploadForm = document.getElementById('uploadForm');
         const uploadPdfForm = document.getElementById('uploadPdfForm');
@@ -248,6 +280,217 @@
 
         // Event listeners
         renameFolder.addEventListener('change', fetchRenameFiles);
+
+        const folderOptions = [
+            { value: "bio", label: "Bio" },
+            { value: "covers", label: "Covers" },
+            { value: "cv", label: "CV" },
+            { value: "jobs", label: "Jobs" },
+            { value: "company", label: "Company" },
+            { value: "user", label: "User" },
+        ];
+
+        const folderFileSelectors = document.getElementById('folderFileSelectors');
+        const addSelectorButton = document.getElementById('addSelector');
+
+        // Add a new folder/file selector
+        addSelectorButton.addEventListener('click', () => {
+            const selectorDiv = document.createElement('div');
+            selectorDiv.className = 'folder-file-selector';
+
+            const folderSelect = document.createElement('select');
+            folderSelect.className = 'folderSelect';
+            folderOptions.forEach(option => {
+                const opt = document.createElement('option');
+                opt.value = option.value;
+                opt.textContent = option.label;
+                folderSelect.appendChild(opt);
+            });
+
+            const fileInput = document.createElement('input');
+            fileInput.type = 'text';
+            fileInput.className = 'fileInput';
+            fileInput.placeholder = 'Enter file name (e.g., bio.txt)';
+
+            const removeButton = document.createElement('button');
+            removeButton.type = 'button';
+            removeButton.textContent = 'Remove';
+            removeButton.addEventListener('click', () => {
+                selectorDiv.remove();
+            });
+
+            selectorDiv.appendChild(folderSelect);
+            selectorDiv.appendChild(fileInput);
+            selectorDiv.appendChild(removeButton);
+            folderFileSelectors.appendChild(selectorDiv);
+        });
+
+    // Handle embedding generation
+    document.getElementById('embeddingForm').addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const selectors = document.querySelectorAll('.folder-file-selector');
+        const files = Array.from(selectors).map(selector => {
+            const folder = selector.querySelector('.folderSelect').value;
+            const fileName = selector.querySelector('.fileInput').value.trim();
+            return { folder, fileName };
+        });
+
+        try {
+            const response = await fetch('/upload/generate-multi-embedding', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ files }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                document.getElementById('embeddingResult').innerHTML = `
+                    <p>Embedding generated successfully:</p>
+                    <pre>${JSON.stringify(data.embedding, null, 2)}</pre>
+                    <p>Saved as: ${data.fileName}</p>
+                `;
+
+                // Show the save embedding section
+                document.getElementById('saveEmbeddingSection').style.display = 'block';
+                document.getElementById('saveEmbeddingForm').dataset.fileName = data.fileName;
+            } else {
+                document.getElementById('embeddingResult').innerHTML = `
+                    <p>Error: ${data.error}</p>
+                `;
+            }
+        } catch (error) {
+            console.error('Error generating embedding:', error);
+            document.getElementById('embeddingResult').innerHTML = `
+                <p>Error generating embedding. Please try again.</p>
+            `;
+        }
+    });
+
+    // Handle saving the embedding
+    document.getElementById('saveEmbeddingForm').addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const embeddingKey = document.getElementById('embeddingKey').value.trim();
+        const fileName = document.getElementById('saveEmbeddingForm').dataset.fileName;
+
+        if (!embeddingKey || !fileName) {
+            alert('Please enter a key and generate an embedding first.');
+            return;
+        }
+
+        try {
+            const response = await fetch('/upload/save-embedding', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ key: embeddingKey, fileName }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                document.getElementById('saveEmbeddingResult').innerHTML = `
+                    <p>Embedding saved successfully with key: ${embeddingKey}</p>
+                `;
+            } else {
+                document.getElementById('saveEmbeddingResult').innerHTML = `
+                    <p>Error: ${data.error}</p>
+                `;
+            }
+        } catch (error) {
+            console.error('Error saving embedding:', error);
+            document.getElementById('saveEmbeddingResult').innerHTML = `
+                <p>Error saving embedding. Please try again.</p>
+            `;
+        }
+    });
+    const embeddingLinksList = document.getElementById('embeddingLinksList');
+
+    // Load embeddings from embeddinglinks.json
+    document.getElementById('loadEmbeddings').addEventListener('click', async () => {
+        try {
+            const response = await fetch('/upload/embedding-links');
+            const data = await response.json();
+
+            if (response.ok) {
+                embeddingLinksList.innerHTML = '';
+                data.forEach((link, index) => {
+                    const embeddingDiv = document.createElement('div');
+                    embeddingDiv.innerHTML = `
+                        <p><strong>Key:</strong> ${link.key}</p>
+                        <p><strong>File:</strong> ${link.fileName}</p>
+                        <button onclick="editEmbeddingKey(${index}, '${link.key}', '${link.fileName}')">Edit</button>
+                        <button onclick="deleteEmbedding('${link.key}', '${link.fileName}')">Delete</button>
+                        <hr>
+                    `;
+                    embeddingLinksList.appendChild(embeddingDiv);
+                });
+            } else {
+                alert('Failed to load embeddings.');
+            }
+        } catch (error) {
+            console.error('Error loading embeddings:', error);
+            alert('Failed to load embeddings.');
+        }
+    });
+
+    // Edit an embedding key
+    async function editEmbeddingKey(index, oldKey, fileName) {
+        const newKey = prompt('Enter a new key:', oldKey);
+        if (!newKey || newKey === oldKey) return;
+
+        try {
+            const response = await fetch('/upload/edit-embedding-key', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ index, oldKey, newKey, fileName }),
+            });
+
+            const result = await response.json();
+            if (response.ok) {
+                alert(result.message);
+                document.getElementById('loadEmbeddings').click(); // Reload embeddings
+            } else {
+                alert(result.error);
+            }
+        } catch (error) {
+            console.error('Error editing embedding key:', error);
+            alert('Failed to edit embedding key.');
+        }
+    }
+
+    // Delete an embedding
+    async function deleteEmbedding(key, fileName) {
+        if (!confirm(`Are you sure you want to delete the embedding for key "${key}"?`)) return;
+
+        try {
+            const response = await fetch('/upload/delete-embedding', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ key, fileName }),
+            });
+
+            const result = await response.json();
+            if (response.ok) {
+                alert(result.message);
+                document.getElementById('loadEmbeddings').click(); // Reload embeddings
+            } else {
+                alert(result.error);
+            }
+        } catch (error) {
+            console.error('Error deleting embedding:', error);
+            alert('Failed to delete embedding.');
+        }
+    }
     </script>
 </body>
 </html>

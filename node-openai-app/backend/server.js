@@ -80,10 +80,27 @@ app.get('/test-session', (req, res) => {
 
 // Serve the index.html file dynamically
 app.get('/', (req, res) => {
+    const { state } = req.query;
+
+    // Decode the Base64 string from the `state` query parameter
+    if (state) {
+        try {
+            const decodedKeyword = Buffer.from(state, 'base64').toString('utf8');
+            req.session.keyword = decodedKeyword; // Store the decoded keyword in the session
+            logger.info(`Decoded keyword from state: ${decodedKeyword}`);
+        } catch (error) {
+            logger.error(`Failed to decode state parameter: ${error.message}`);
+        }
+    } else {
+        req.session.keyword = 'Standard'; // Default keyword if no state is provided
+        logger.info('No state parameter provided. Using default keyword: Standard');
+    }
+
     const name = process.env.NAME || 'A Default Name'; // Fallback if NAME is not set
-    const title = process.env.TITLE || 'Working a default job'; // Fallback if NAME is not set
-    const brand = process.env.BRAND || 'As a default person'; // Fallback if NAME is not set
-    const location = process.env.LOCATION || 'In a Default location'; // Fallback if NAME is not set
+    const title = process.env.TITLE || 'Working a default job'; // Fallback if TITLE is not set
+    const brand = process.env.BRAND || 'As a default person'; // Fallback if BRAND is not set
+    const location = process.env.LOCATION || 'In a Default location'; // Fallback if LOCATION is not set
+
     res.render('index', { name, title, brand, location });
 });
 
