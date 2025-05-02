@@ -6,6 +6,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     const cvForm = document.getElementById('cvForm');
     const cvLinkButton = document.getElementById('cvLink');
 
+    const promptsContainer = document.getElementById('standardPrompts');
+
+    // Fetch prompts from the backend
+    try {
+        const response = await fetch('/api/prompts');
+        const data = await response.json();
+
+        // Add prompts as lozenges
+        data.prompts.forEach(prompt => {
+            const button = document.createElement('button');
+            button.className = 'prompt-lozenge';
+            button.textContent = prompt;
+            button.addEventListener('click', () => {
+                userInput.value = prompt; // Set the lozenge text as the input value
+                userInput.focus(); // Focus the input field
+            });
+            promptsContainer.appendChild(button);
+        });
+    } catch (error) {
+        console.error('Failed to fetch prompts:', error);
+    }
+    
     try {
         // Fetch the filename from the backend
         const response = await fetch('/cv_public/filename');
@@ -83,4 +105,5 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         userInput.value = ''; // Clear the input field
     });
+    
 });

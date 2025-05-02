@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
 const { RecursiveCharacterTextSplitter } = require('langchain/text_splitter');
-const { OpenAIEmbeddings } = require('langchain/embeddings/openai');
+const { OpenAIEmbeddings } = require('@langchain/openai'); // Import OpenAI embeddings
 const { QdrantClient } = require('@qdrant/js-client-rest');
 const { v4: uuidv4 } = require('uuid'); // Import UUID library
 
@@ -192,7 +192,7 @@ const qdrantClient = new QdrantClient({
 });
 
 // Collection name in Qdrant
-const COLLECTION_NAME = process.env.COLLECTION_NAME || 'default_collection'; // Default collection name
+const COLLECTION_NAME = process.env.QDRANT_COLLECTION_NAME || 'default_collection'; // Default collection name
 
 // Ensure the collection exists in Qdrant
 async function ensureCollection() {
@@ -210,16 +210,23 @@ async function ensureCollection() {
 ensureCollection();
 
 // Chunk documents using LangChain
-async function chunkDocument(content) {
+async function chunkDocument(contents) {
     console.log('Starting document chunking...');
     const splitter = new RecursiveCharacterTextSplitter({
-        chunkSize: 1000, // Maximum size of each chunk
-        chunkOverlap: 100, // Overlap between chunks
+        chunkSize: 500, // Reduce chunk size to make chunks smaller
+        chunkOverlap: 50, // Overlap between chunks to maintain context
     });
 
-    const chunks = await splitter.createDocuments([content]);
-    console.log(`Document chunked into ${chunks.length} chunks.`);
-    return chunks.map(chunk => chunk.pageContent); // Extract chunk content
+    const allChunks = [];
+    for (const content of contents) {
+        console.log('Chunking a single document...');
+        const chunks = await splitter.createDocuments([content]);
+        console.log(`Document chunked into ${chunks.length} chunks.`);
+        allChunks.push(...chunks.map(chunk => chunk.pageContent)); // Extract chunk content
+    }
+
+    console.log(`Total chunks created: ${allChunks.length}`);
+    return allChunks;
 }
 
 // Generate embeddings for chunks
@@ -283,10 +290,9 @@ router.post('/generate-multi-embedding', async (req, res) => {
 
     try {
         console.log(`Starting embedding generation for key: ${key}`);
-        let combinedContent = '';
-        const fileNames = [];
+        const fileContents = [];
 
-        // Read and combine content from all specified files
+        // Read content from all specified files
         for (const { folder, fileName } of files) {
             const folderPath = path.join(__dirname, `../texts/${folder}`);
             const filePath = path.join(folderPath, fileName);
@@ -298,13 +304,12 @@ router.post('/generate-multi-embedding', async (req, res) => {
 
             console.log(`Reading file: ${fileName} from folder: ${folder}`);
             const fileContent = fs.readFileSync(filePath, 'utf8');
-            combinedContent += fileContent + '\n';
-            fileNames.push(fileName);
+            fileContents.push(fileContent);
         }
 
-        console.log('Finished reading and combining file content.');
+        console.log('Finished reading file contents.');
         console.log('Starting document chunking...');
-        const chunks = await chunkDocument(combinedContent);
+        const chunks = await chunkDocument(fileContents); // Pass array of document contents
         console.log(`Document chunked into ${chunks.length} chunks.`);
 
         console.log('Starting embedding generation for chunks...');
@@ -335,7 +340,7 @@ router.post('/save-embedding', async (req, res) => {
 
     try {
         // Ensure the collection exists in Qdrant
-        const collectionName = `${key}`;
+        const collectionName = process.env.QDRANT_COLLECTION_NAME || 'default_collection'; // Default collection name
         const collections = await qdrantClient.getCollections();
         if (!collections.collections.some(c => c.name === collectionName)) {
             await qdrantClient.createCollection(collectionName, {

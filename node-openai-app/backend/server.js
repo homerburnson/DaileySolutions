@@ -106,7 +106,11 @@ app.get('/', (req, res) => {
 
 // Serve the upload.html page on the /uploaddocs route
 app.get('/uploaddocs', (req, res) => {
-    res.sendFile(path.join(__dirname, '../frontend/public', 'upload.html'));
+    if (req.oidc.isAuthenticated()) {
+        res.sendFile(path.join(__dirname, '../frontend/public', 'upload.html'));
+    } else {
+        res.send('<h1>You are not logged in</h1><a href="/login">Log in</a>');
+    }
 });
 
 // Protected routes

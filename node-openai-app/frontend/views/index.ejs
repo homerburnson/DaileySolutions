@@ -256,6 +256,55 @@
             fill: #f7eacf; /* Change color on hover */
         }
 
+        /* Prompts container styling */
+        .prompts-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 10px auto;
+            flex-wrap: wrap; /* Allow wrapping for smaller screens */
+            padding: 10px;
+            background-color: rgba(255, 255, 255, 0.8); /* Light background */
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+            transition: background-color 0.3s, color 0.3s; /* Smooth transition for dark mode */
+        }
+
+        /* Dark mode styling for prompts container */
+        .prompts-container.dark-mode {
+            background-color: rgba(30, 30, 30, 0.9); /* Darker background for dark mode */
+            color: #f1f1f1;
+        }
+
+        /* Individual prompt lozenges */
+        .prompt-lozenge {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s, color 0.3s;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Subtle shadow for lozenges */
+        }
+
+        /* Hover effect for lozenges */
+        .prompt-lozenge:hover {
+            background-color: #0056b3;
+        }
+
+        /* Dark mode styling for lozenges */
+        .prompt-lozenge.dark-mode {
+            background-color: #444;
+            color: #f1f1f1;
+        }
+
+        .prompt-lozenge.dark-mode:hover {
+            background-color: #666;
+        }
+
+        /* Responsive design for smaller screens */
         @media (max-width: 768px) {
             #chatContainer {
                 max-width: 95%;
@@ -272,6 +321,11 @@
             #cvLink {
                 font-size: 12px;
                 padding: 8px 15px;
+            }
+
+            .prompt-lozenge {
+                font-size: 12px;
+                padding: 8px 12px;
             }
         }
     </style>
@@ -297,6 +351,9 @@
     <div id="chatContainer">
         <div id="responseContainer" class="response">
             <!-- Messages will be dynamically added here -->
+        </div>
+        <div id="standardPrompts" class="prompts-container">
+            <!-- Prompts will be dynamically added here -->
         </div>
         <form id="inputForm">
             <div class="input-wrapper">
@@ -346,6 +403,8 @@
             const userMessages = document.getElementsByClassName('user-message');
             const userInput = document.getElementById('userInput');
             const cvLink = document.getElementById('cvLink');
+            const promptsContainer = document.getElementById('standardPrompts');
+            const promptLozenges = document.getElementsByClassName('prompt-lozenge');
 
             // Toggle dark mode
             darkModeToggle.addEventListener('click', () => {
@@ -354,6 +413,7 @@
                 responseContainer.classList.toggle('dark-mode');
                 cvLink.classList.toggle('dark-mode');
                 userInput.classList.toggle('dark-mode');
+                promptsContainer.classList.toggle('dark-mode');
 
                 // Change background image for dark mode
                 if (body.classList.contains('dark-mode')) {
@@ -371,6 +431,11 @@
 
                 Array.from(userMessages).forEach(message => {
                     message.classList.toggle('dark-mode');
+                });
+
+                // Toggle dark mode for all lozenges
+                Array.from(promptLozenges).forEach(lozenge => {
+                    lozenge.classList.toggle('dark-mode');
                 });
             });
         });
