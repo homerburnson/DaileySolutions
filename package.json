@@ -1,7 +1,7 @@
 {
   "name": "jobbot-gpt-v2",
   "version": "1.0.0",
-  "description": "APp for answering interviewers",
+  "description": "A Node.js application that interacts with OpenAI's API to generate responses based on user input.",
   "homepage": "https://github.com/homerburnson/JobBot-GPT-v2#readme",
   "bugs": {
     "url": "https://github.com/homerburnson/JobBot-GPT-v2/issues"
@@ -10,11 +10,53 @@
     "type": "git",
     "url": "git+https://github.com/homerburnson/JobBot-GPT-v2.git"
   },
-  "license": "ISC",
-  "author": "",
+  "license": "MIT",
+  "author": "ld",
   "type": "commonjs",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node node-openai-app/backend/server.js",
+    "test": "echo \"No tests implemented yet\" && exit 0",
+    "build": "react-scripts build",
+    "eject": "react-scripts eject"
+  },
+  "dependencies": {
+    "@langchain/core": "^0.3.50",
+    "@langchain/openai": "^0.5.8",
+    "@qdrant/js-client-rest": "^1.13.0",
+    "axios": "^1.9.0",
+    "dotenv": "^16.5.0",
+    "ejs": "^3.1.10",
+    "express": "^4.17.1",
+    "express-openid-connect": "^2.18.0",
+    "express-rate-limit": "^7.5.0",
+    "express-session": "^1.18.1",
+    "langchain": "^0.3.24",
+    "multer": "^1.4.5-lts.2",
+    "openai": "^4.0.0",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "winston": "^3.17.0",
+    "winston-daily-rotate-file": "^5.0.0"
+  },
+  "devDependencies": {
+    "react-scripts": "latest"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
   }
 }

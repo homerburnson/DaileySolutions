@@ -1,11 +1,13 @@
 # Node.js dependencies
-/backend/node_modules
+node-openai-app/backend/node_modules
+/node_modules
+/logs
 
 # Environment variables
-/.env
+.env
 
 # Personal files
-/backend/texts/covers/*
+node-openai-app/backend/texts/covers/*
 /backend/texts/cv/*
 /backend/texts/jobs/*
 /backend/texts/bio/*
@@ -15,9 +17,13 @@
 /backend/embeddings/*
 
 # Logs
-/backend/logs/*
+node-openai-app/backend/Logs
+node-openai-app/backend/texts
+node-openai-app/backend/logs
 /backend/logs/*.txt
 /backend/logs/*.json
+../logs
+../node_modules
 
 *.log
 npm-debug.log*
@@ -53,7 +59,8 @@ Thumbs.db
 /frontend/node_modules
 /frontend/build
 /frontend/dist
-/frontend/public/cv_public
+node-openai-app/frontend/cv_public
+node-openai-app/frontend/node_modules
 
 # Miscellaneous
 *.bak
