@@ -17,35 +17,39 @@ This is a full-stack Node.js application that integrates with OpenAI's API to ge
 ```
 node-openai-app
 ├── backend
-│   ├── texts/            # Uploaded files: CVs, cover letters, job descriptions, and more
-│   │   ├── bio/          # Biography files (e.g., bio.txt)
-│   │   ├── covers/       # Cover letter files (e.g., Standard cover letter)
-│   │   ├── cv/           # CV files (e.g., Standard CV)
-│   │   ├── company/      # Company-specific files
-│   │   ├── jobs/         # Job description files
-│   │   └── user/         # User-specific files
-│   ├── routes/           # Express route handlers
-│   │   ├── api.js        # Handles OpenAI API requests and Qdrant interactions
-│   │   └── upload.js     # Handles file uploads and management
-│   ├── server.js         # Express server entry point
-│   ├── logger.js         # Centralized logging configuration
-│   ├── package.json      # Backend dependencies
-│   └── .env              # Environment variables (e.g., OpenAI API key, user details)
+│   ├── texts/                # Uploaded files: CVs, cover letters, job descriptions, and more
+│   │   ├── bio/              # Biography files (e.g., bio.txt)
+│   │   ├── covers/           # Cover letter files (e.g., Standard cover letter)
+│   │   ├── cv/               # CV files (e.g., Standard CV)
+│   │   ├── company/          # Company-specific files
+│   │   ├── jobs/             # Job description files
+│   │   └── user/             # User-specific files
+│   ├── routes/               # Express route handlers
+│   │   ├── api.js            # Handles OpenAI API requests and Qdrant interactions
+│   │   └── upload.js         # Handles file uploads and management
+│   ├── server.js             # Express server entry point
+│   ├── logger.js             # Centralized logging configuration
+│   ├── package.json          # Backend dependencies
+│   └── .env                  # Environment variables (e.g., OpenAI API key, user details)
 ├── frontend
-│   ├── public/
-│   │   ├── index.html     # Main frontend UI
-│   │   ├── upload.html    # Upload and file management page
-│   │   ├── App.js         # Frontend logic
-│   │   ├── styles/        # CSS styling
-│   │   │   └── App.css    # Main stylesheet
-│   │   └── images/        # Static assets
-│   │       ├── profile.jpg    # Profile image
-│   │       ├── background.png # Background image for the UI
-│   │       └── background2.png # Background image for dark mode
-│   └── package.json       # Frontend dependencies
-├── README.md              # Project documentation
-├── .env.example           # Example environment variables
-└── .gitignore             # Git ignore file
+│   ├── public/               # Public assets and frontend logic
+│   │   ├── index.html        # Main frontend UI
+│   │   ├── upload.html       # Upload and file management page
+│   │   ├── App.js            # Frontend JavaScript logic
+│   │   ├── styles/           # CSS styling
+│   │   │   └── App.css       # Main stylesheet
+│   │   ├── images/           # Static assets
+│   │   │   ├── profile.jpg   # Profile image
+│   │   │   ├── background.png # Background image for the UI
+│   │   │   └── background2.png # Background image for dark mode
+│   │   └── favicon.ico       # Favicon for the app
+│   ├── views/                # EJS templates for dynamic rendering
+│   │   ├── index.ejs         # Main page template
+│   │   └── upload.ejs        # Upload page template
+│   └── package.json          # Frontend dependencies
+├── README.md                 # Project documentation
+├── .env.example              # Example environment variables
+└── .gitignore                # Git ignore file
 ```
 
 ---
