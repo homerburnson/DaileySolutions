@@ -1,6 +1,6 @@
 {
-  "name": "jobbot-gpt-v2",
-  "version": "1.0.0",
+  "name": "job_bot",
+  "version": "0.1.0",
   "description": "A Node.js application that interacts with OpenAI's API to generate responses based on user input.",
   "homepage": "https://github.com/homerburnson/JobBot-GPT-v2#readme",
   "bugs": {
