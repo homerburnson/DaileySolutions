@@ -1,7 +1,7 @@
 # Node.js dependencies
 node-openai-app/backend/node_modules
 /node_modules
-/logs
+/logs/*
 
 # Environment variables
 .env

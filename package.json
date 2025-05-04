@@ -10,6 +10,9 @@
     "type": "git",
     "url": "git+https://github.com/homerburnson/JobBot-GPT-v2.git"
   },
+  "engines": {
+  "node": "v22.9.0"
+  },
   "license": "MIT",
   "author": "ld",
   "type": "commonjs",
