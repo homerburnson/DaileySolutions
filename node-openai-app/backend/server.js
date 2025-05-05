@@ -42,9 +42,9 @@ app.use(auth(config));
 // Configure session middleware
 app.use(
     session({
-        secret: process.env.SESSION_SECRET || 'defaultsecret',
+        secret: process.env.SESSION_SECRET || 'your-secret-key',
         resave: false,
-        saveUninitialized: true,
+        saveUninitialized: false,
         cookie: {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
@@ -83,16 +83,16 @@ app.get('/', (req, res) => {
     const { state } = req.query;
 
     // Decode the Base64 string from the `state` query parameter
-    let keyword = 'Standard'; // Default keyword
     if (state) {
         try {
-            keyword = Buffer.from(state, 'base64').toString('utf8');
-            req.session.keyword = keyword; // Store the decoded keyword in the session
-            logger.info(`Decoded keyword from state: ${keyword}`);
+            const decodedKeyword = Buffer.from(state, 'base64').toString('utf8');
+            req.session.keyword = decodedKeyword; // Store the decoded keyword in the session
+            logger.info(`Decoded keyword from state: ${decodedKeyword}`);
         } catch (error) {
             logger.error(`Failed to decode state parameter: ${error.message}`);
         }
     } else {
+        req.session.keyword = 'Standard'; // Default keyword if no state is provided
         logger.info('No state parameter provided. Using default keyword: Standard');
     }
 
@@ -101,7 +101,7 @@ app.get('/', (req, res) => {
     const brand = process.env.BRAND || 'As a default person'; // Fallback if BRAND is not set
     const location = process.env.LOCATION || 'In a Default location'; // Fallback if LOCATION is not set
 
-    res.render('index', { name, title, brand, location, keyword });
+    res.render('index', { name, title, brand, location });
 });
 
 // Serve the upload.html page on the /uploaddocs route
