@@ -28,9 +28,7 @@ node-openai-app
 │   │   ├── api.js            # Handles OpenAI API requests and Qdrant interactions
 │   │   └── upload.js         # Handles file uploads and management
 │   ├── server.js             # Express server entry point
-│   ├── logger.js             # Centralized logging configuration
-│   ├── package.json          # Backend dependencies
-│   └── .env                  # Environment variables (e.g., OpenAI API key, user details)
+│   └── logger.js             # Centralized logging configuration
 ├── frontend
 │   ├── public/               # Public assets and frontend logic
 │   │   ├── index.html        # Main frontend UI
@@ -43,10 +41,11 @@ node-openai-app
 │   │   │   ├── background.png # Background image for the UI
 │   │   │   └── background2.png # Background image for dark mode
 │   │   └── favicon.ico       # Favicon for the app
-│   ├── views/                # EJS templates for dynamic rendering
-│   │   ├── index.ejs         # Main page template
-│   │   └── upload.ejs        # Upload page template
-│   └── package.json          # Frontend dependencies
+│   └── views/                # EJS templates for dynamic rendering
+│       ├── index.ejs         # Main page template
+│       └── upload.ejs        # Upload page template
+├── package.json              # Combined dependencies and scripts for the entire project
+├── .env                      # Environment variables for the project
 ├── README.md                 # Project documentation
 ├── .env.example              # Example environment variables
 └── .gitignore                # Git ignore file
@@ -69,17 +68,21 @@ node-openai-app
    cd node-openai-app
    ```
 
-2. Install backend dependencies:
+2. Install dependencies:
    ```bash
-   cd backend
    npm install
    ```
 
-3. Install frontend dependencies:
-   ```bash
-   cd ../frontend
-   npm install
-   ```
+3. Set up the `.env` file:
+   - Copy the `.env.example` file to `.env`:
+     ```bash
+     cp .env.example .env
+     ```
+   - Update the `.env` file with your configuration:
+     - `OPENAI_API_KEY`: Your OpenAI API key.
+     - `CLUSTERURL`: Your Qdrant cluster URL.
+     - `DBSECRET`: Your Qdrant API key.
+     - `NAME`, `TITLE`, `BRAND`, `LOCATION`: User-specific details.
 
 ---
 
@@ -87,13 +90,11 @@ node-openai-app
 
 1. Start the backend server:
    ```bash
-   cd backend
-   node server.js
+   npm start
    ```
 
 2. Open the frontend:
-   - Open `index.html` directly in a browser, or
-   - Serve the `public` folder using a local server (e.g., `http-server`).
+   - Open `http://localhost:3000` in your browser.
 
 ---
 
@@ -152,128 +153,6 @@ To set up the app, you need accounts for **OpenAI**, **Qdrant**, and **Auth0**. 
    AUTH0_CLIENT_ID=your-auth0-client-id
    AUTH0_CLIENT_SECRET=your-auth0-client-secret
    ```
-
-### **4. Environment Config**
-
-**Configure Environment Variables**:
-   - Copy the `.env.example` file to `.env`:
-     ```bash
-     cp backend/.env.example backend/.env
-     ```
-   - Update the `.env` file with the user's details:
-     - `NAME`: The user's name.
-     - `TITLE`: The user's title or role.
-     - `BRAND`: The user's expertise or brand.
-     - `LOCATION`: The user's location.
-   - Update the `.env` file with keys and URLs requested.
-
-### Functional Implementation
-
-1. The following steps can be completed through the user interface by going to:
-```
-   <url>/uploaddocs
-```
-For example, if this is running locally on your laptop, go to:
-
-```
-     http://localhost:3000/uploaddocs
-```
-
-2. **Prepare Required Files**:
-   - At a minimum, the following files should be created and uploaded to the relevant folders in `backend/texts`:
-     - `bio.txt` in the `bio` folder: A brief biography of the user.
-     - A standard cover letter in the `covers` folder.
-     - A standard CV in the `cv` folder.
-
-3. **Optional Files**:
-   - Additional files can be uploaded to the `company`, `jobs`, and `user` folders. These files can be tied together using a unique keyword.
-
-4. **Bundle Documents with Keywords**:
-   - To group documents for a specific context, insert the same unique keyword into the filenames or content of the files.
-   - For example, if targeting a company named "TechCorp," use the keyword `TechCorp` in the filenames or content of the files in the `company`, `jobs`, and `user` folders.
-
-5. **Generate Embeddings Using Qdrant**:
-   - After uploading the required files, embeddings need to be generated for the text content to enable similarity searches.
-   - The app generates embeddings for uploaded files and stores them in the Qdrant vector database via the `/uploaddocs` page.
-   - Ensure that the Qdrant cluster is running and properly configured in the `.env` file:
-     ```env
-     CLUSTERURL=your-qdrant-cluster-url
-     DBSECRET=your-qdrant-api-key
-     QDRANT_COLLECTION_NAME=document_embeddings
-     ```
-   - The embeddings are generated using OpenAI's embedding model and stored in the Qdrant collection specified in the `.env` file.
-
-6. **Use Base64 Encoding for Keywords**:
-   - Encode the keyword in Base64 and pass it as a query parameter in the URL:
-     ```
-     <url>?state=<base64encodedstring>
-     ```
-   - For example, to target "TechCorp," encode the keyword in a terminal like so:
-     ```bash
-     echo -n "TechCorp" | base64
-     ```
-     This will produce `VGVjaENvcnA=`.
-   - Use the URL:
-     ```
-     http://localhost:3000/?state=VGVjaENvcnA=
-     ```
-     Or go to a website such as https://www.base64encode.org/ and follow the instructions to encode your string online.
-
-7. **Dynamic Context Loading**:
-   - When the app detects the `state` query parameter, it decodes the Base64 string and uses the keyword to load the relevant files into the OpenAI context window for that session (i.e., it will answer questions using the files you uploaded which contain that keyword, for context).
-
----
-
-## Usage
-
-- Open your browser and navigate to `http://localhost:3000` to access the main interface.
-- Use the `/uploaddocs` route to upload and manage `.txt` files.
-- Pass a `state` query parameter in the URL to dynamically load specific bundles of embeddings into the OpenAI context.
-
----
-
-## Future Potential
-
-This application was built with flexibility in mind. While it currently showcases one individual’s professional profile, it is fully compatible with other CVs, cover letters, and job materials. This means other users can upload their own documents and leverage the app as a personal assistant for job seeking and professional interactions.
-
-In the future, the app could:
-
-- Serve as a dynamic, AI-powered portfolio or digital résumé for multiple users.
-- Act as a personalized chatbot that role-plays as a job applicant, answering recruiter questions.
-- Generate tailored application materials (e.g., cover letters) from uploaded job descriptions.
-- Enable secure, shareable links for prospective employers to interact with a candidate’s chatbot persona.
-
-The modular design supports these enhancements with minimal changes, encouraging experimentation with AI-driven representations of professional identity.
-
----
-
-## Feature Backlog
-
-The following features are planned for future development but are currently on hold due to time and cost constraints:
-
-1. **Voice Functionality**:
-   - Add the ability for the app to interact with users via voice input and output.
-   - Use third-party or open-source software to process voice commands and generate spoken responses.
-
-2. **Voice Mimicry**:
-   - Implement functionality to mimic a specific voice for the assistant, making interactions more personalized.
-   - Use advanced voice synthesis tools to replicate tone, pitch, and style.
-
-3. **Tone Mimicry in Writing**:
-   - Enhance the assistant's ability to mimic specific tones or writing styles based on user preferences or context.
-   - Allow users to specify a tone (e.g., formal, casual, persuasive) for responses.
-
-4. **Prompt Engineering**:
-   - Refine prompts sent to the OpenAI API to ensure they are optimized for the app's use case. Consider fine-tuning.
-   - Introduce **suggested prompts** in the user interface to guide users in interacting with the app effectively.
-   - Upgrade **conversation history** to summarize conversation history and extract key details when passing into context. Effective for cost control.
-
-5. **UI Cleanup for the Upload Page**:
-   - Improve the design and usability of the `/uploaddocs` page to make it more user-friendly.
-   - Add better file management features, such as drag-and-drop uploads, progress indicators, and error handling.
-   - This is currently a **non-critical feature** since the app is primarily used by the developer.
-
-These features would significantly enhance the app's interactivity and personalization. However, they require additional resources and development time, making them part of a longer-term roadmap.
 
 ---
 
