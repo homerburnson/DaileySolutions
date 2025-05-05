@@ -11,12 +11,17 @@
     "url": "git+https://github.com/homerburnson/JobBot-GPT-v2.git"
   },
   "engines": {
-  "node": "v22.9.0"
+    "node": "v22.9.0"
   },
   "license": "MIT",
   "author": "ld",
   "type": "commonjs",
-  "main": "server.js",
+  "main": "node-openai-app/backend/server.js",
+  "exports": {
+    ".": "./node-openai-app/backend/server.js",
+    "./env": "./.env",
+    "./index": "./node-openai-app/frontend/public/index.html"
+  },
   "scripts": {
     "start": "node node-openai-app/backend/server.js",
     "test": "echo \"No tests implemented yet\" && exit 0",
@@ -43,7 +48,7 @@
     "winston-daily-rotate-file": "^5.0.0"
   },
   "devDependencies": {
-    "react-scripts": "latest"
+    "react-scripts": "^5.0.1"
   },
   "eslintConfig": {
     "extends": [
