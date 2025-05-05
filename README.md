@@ -1,6 +1,6 @@
 # Node OpenAI App
 
-This is a full-stack Node.js application that integrates with OpenAI's API to generate dynamic responses based on user input. The project includes a backend powered by Express.js and a frontend built with vanilla JavaScript and HTML. It incorporates a Qdrant database (best in benchmarking tests for performance) and uses a **Retrieval-Augmented Generation (RAG)** model to enhance responses with relevant context.
+This is a full-stack Node.js application that integrates with OpenAI's API to generate dynamic responses based on user input. The project includes a backend powered by Express.js and a frontend built with vanilla JavaScript and HTML. It incorporates a Qdrant database and uses a **Retrieval-Augmented Generation (RAG)** model to enhance responses with relevant context.
 
 ---
 
@@ -16,36 +16,40 @@ This is a full-stack Node.js application that integrates with OpenAI's API to ge
 
 ```
 node-openai-app/
-├── node_modules/          # Dependencies (managed by npm)
-├── public/                # Static assets and public files
-│   ├── index.html         # Main HTML file
-│   ├── favicon.ico        # Favicon for the app
-│   ├── images/            # Static images
-│   │   ├── profile.jpg    # Profile image
-│   │   ├── background.png # Background image for the UI
-│   │   └── background2.png # Background image for dark mode
-│   └── other-static-files # Any other static files
-├── src/                   # Source code for the React app
-│   ├── components/        # React components
-│   │   ├── App.js         # Main React component
-│   │   ├── Header.js      # Header component
-│   │   ├── Chat.js        # Chat component
-│   │   └── other-components.js
-│   ├── styles/            # CSS styling
-│   │   └── App.css        # Main stylesheet
-│   ├── views/             # EJS templates (if still needed)
-│   │   ├── index.ejs      # Main page template
-│   │   └── upload.ejs     # Upload page template
-│   ├── utils/             # Utility functions
-│   │   └── api.js         # API interaction logic
-│   ├── App.js             # Main React app entry point
-│   ├── index.js           # React app entry point
-│   └── other-files.js     # Other JavaScript files
-├── .env                   # Environment variables
-├── .env.example           # Example environment variables
-├── package.json           # Project metadata and dependencies
-├── README.md              # Project documentation
-└── .gitignore             # Git ignore file
+├── backend/
+│   ├── texts/                # Uploaded files: CVs, cover letters, job descriptions, and more
+│   │   ├── bio/              # Biography files (e.g., bio.txt)
+│   │   ├── covers/           # Cover letter files (e.g., Standard cover letter)
+│   │   ├── cv/               # CV files (e.g., Standard CV)
+│   │   ├── company/          # Company-specific files
+│   │   ├── jobs/             # Job description files
+│   │   └── user/             # User-specific files
+│   ├── routes/               # Express route handlers
+│   │   ├── api.js            # Handles OpenAI API requests and Qdrant interactions
+│   │   └── upload.js         # Handles file uploads and management
+│   ├── server.js             # Express server entry point
+│   └── logger.js             # Centralized logging configuration
+├── frontend/
+│   ├── public/               # Public assets and frontend logic
+│   │   ├── cv_public/        # Folder to insert publicly downloadable CV in .pdf form  
+│   │   ├── index.html        # Main frontend UI
+│   │   ├── upload.html       # Upload and file management page
+│   │   ├── styles/           # CSS styling
+│   │   │   └── App.css       # Main stylesheet
+│   │   ├── images/           # Static assets
+│   │   │   ├── profile.jpg   # Profile image
+│   │   │   ├── background.png # Background image for the UI
+│   │   │   └── background2.png # Background image for dark mode
+│   │   └── favicon.ico       # Favicon for the app
+│   └── views/                # EJS templates for dynamic rendering
+│       ├── index.ejs         # Main page template
+│       └── upload.ejs        # Upload page template
+├── .env                      # Environment variables for the project
+├── .env.example              # Example environment variables
+├── package.json              # Combined dependencies and scripts for the entire project
+├── package-lock.json         # Lockfile for dependencies
+├── README.md                 # Project documentation
+└── .gitignore                # Git ignore file
 ```
 
 ---
@@ -106,50 +110,6 @@ node-openai-app/
 - **Embedding Generation**: Generate sets of embeddings for uploaded files using OpenAI's embedding model and store them in the Qdrant vector database.
 - **Dynamic Context Loading**: Dynamically loads relevant files into the OpenAI context based on a keyword passed as a Base64-encoded query parameter.
 - **Session History**: Maintains a conversation history for each session, allowing OpenAI to respond with context-aware answers.
-
----
-
-## Technical Implementation
-
-To set up the app, you need accounts for **OpenAI**, **Qdrant**, and **Auth0**. Follow the steps below to configure these platforms and generate the required keys.
-
-### **1. OpenAI Setup**
-1. Create an account on [OpenAI](https://platform.openai.com/).
-2. Navigate to the **API Keys** section in your OpenAI dashboard.
-3. Generate a new API key and copy it.
-4. Add the key to the `.env` file:
-   ```env
-   OPENAI_API_KEY=your-openai-api-key
-   ```
-
-### **2. Qdrant Setup**
-1. Create an account on [Qdrant Cloud](https://cloud.qdrant.io/) or set up a self-hosted Qdrant instance.
-2. If using Qdrant Cloud:
-   - Create a new cluster and note the **Cluster URL**.
-   - Generate an API key for authentication.
-3. If self-hosting:
-   - Install Qdrant using Docker or another method.
-   - Use `http://localhost:6333` as the cluster URL.
-4. Add the cluster URL and API key to the `.env` file:
-   ```env
-   CLUSTERURL=your-qdrant-cluster-url
-   DBSECRET=your-qdrant-api-key
-   QDRANT_COLLECTION_NAME=document_embeddings
-   ```
-
-### **3. Auth0 Setup**
-1. Create an account on [Auth0](https://auth0.com/).
-2. Create a new application in the Auth0 dashboard:
-   - Choose the **Regular Web Application** type.
-3. Note the **Domain**, **Client ID**, and **Client Secret**.
-4. Configure the callback URL in the Auth0 dashboard:
-   - Set the callback URL to `http://localhost:3000/callback` (or your production URL).
-5. Add the Auth0 credentials to the `.env` file:
-   ```env
-   AUTH0_DOMAIN=your-auth0-domain
-   AUTH0_CLIENT_ID=your-auth0-client-id
-   AUTH0_CLIENT_SECRET=your-auth0-client-secret
-   ```
 
 ---
 
