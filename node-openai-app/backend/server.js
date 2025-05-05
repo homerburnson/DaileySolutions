@@ -7,7 +7,6 @@ const config = {
     secret: process.env.AUTH0_SECRET,
     baseURL: process.env.BASE_URL,
     clientID: process.env.AUTH0_CLIENT_ID,
-    clientSecret: process.env.AUTH0_CLIENT_SECRET,
     issuerBaseURL: `https://${process.env.AUTH0_DOMAIN}`,
 };
 const { auth, requiresAuth } = require('express-openid-connect');
