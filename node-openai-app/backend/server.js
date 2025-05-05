@@ -20,7 +20,8 @@ const rateLimit = require('express-rate-limit');
 const logger = require('./logger'); // Import the logger
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 80;
+const baseURL = process.env.BASE_URL || `http://localhost:${PORT}`;
 
 // Set EJS as the templating engine
 app.set('view engine', 'ejs');
@@ -155,5 +156,5 @@ app.use((req, res) => {
 
 // Start the server
 app.listen(PORT, () => {
-    logger.info(`Server is running on http://localhost:${PORT}`);
+    logger.info(`Server is running on ${PORT}`);
 });
