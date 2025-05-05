@@ -15,40 +15,37 @@ This is a full-stack Node.js application that integrates with OpenAI's API to ge
 ## Project Structure
 
 ```
-node-openai-app
-├── backend
-│   ├── texts/                # Uploaded files: CVs, cover letters, job descriptions, and more
-│   │   ├── bio/              # Biography files (e.g., bio.txt)
-│   │   ├── covers/           # Cover letter files (e.g., Standard cover letter)
-│   │   ├── cv/               # CV files (e.g., Standard CV)
-│   │   ├── company/          # Company-specific files
-│   │   ├── jobs/             # Job description files
-│   │   └── user/             # User-specific files
-│   ├── routes/               # Express route handlers
-│   │   ├── api.js            # Handles OpenAI API requests and Qdrant interactions
-│   │   └── upload.js         # Handles file uploads and management
-│   ├── server.js             # Express server entry point
-│   └── logger.js             # Centralized logging configuration
-├── frontend
-│   ├── public/               # Public assets and frontend logic
-│   │   ├── index.html        # Main frontend UI
-│   │   ├── upload.html       # Upload and file management page
-│   │   ├── App.js            # Frontend JavaScript logic
-│   │   ├── styles/           # CSS styling
-│   │   │   └── App.css       # Main stylesheet
-│   │   ├── images/           # Static assets
-│   │   │   ├── profile.jpg   # Profile image
-│   │   │   ├── background.png # Background image for the UI
-│   │   │   └── background2.png # Background image for dark mode
-│   │   └── favicon.ico       # Favicon for the app
-│   └── views/                # EJS templates for dynamic rendering
-│       ├── index.ejs         # Main page template
-│       └── upload.ejs        # Upload page template
-├── package.json              # Combined dependencies and scripts for the entire project
-├── .env                      # Environment variables for the project
-├── README.md                 # Project documentation
-├── .env.example              # Example environment variables
-└── .gitignore                # Git ignore file
+node-openai-app/
+├── node_modules/          # Dependencies (managed by npm)
+├── public/                # Static assets and public files
+│   ├── index.html         # Main HTML file
+│   ├── favicon.ico        # Favicon for the app
+│   ├── images/            # Static images
+│   │   ├── profile.jpg    # Profile image
+│   │   ├── background.png # Background image for the UI
+│   │   └── background2.png # Background image for dark mode
+│   └── other-static-files # Any other static files
+├── src/                   # Source code for the React app
+│   ├── components/        # React components
+│   │   ├── App.js         # Main React component
+│   │   ├── Header.js      # Header component
+│   │   ├── Chat.js        # Chat component
+│   │   └── other-components.js
+│   ├── styles/            # CSS styling
+│   │   └── App.css        # Main stylesheet
+│   ├── views/             # EJS templates (if still needed)
+│   │   ├── index.ejs      # Main page template
+│   │   └── upload.ejs     # Upload page template
+│   ├── utils/             # Utility functions
+│   │   └── api.js         # API interaction logic
+│   ├── App.js             # Main React app entry point
+│   ├── index.js           # React app entry point
+│   └── other-files.js     # Other JavaScript files
+├── .env                   # Environment variables
+├── .env.example           # Example environment variables
+├── package.json           # Project metadata and dependencies
+├── README.md              # Project documentation
+└── .gitignore             # Git ignore file
 ```
 
 ---
